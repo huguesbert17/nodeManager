@@ -7,15 +7,33 @@
    sudo cp pre_install post_install uninstall /usr/local/CyberCP/nodeManager/
    ```
 
-2. Add the URL include to `/usr/local/CyberCP/CyberCP/urls.py`:
+2. Register the Django app in `/usr/local/CyberCP/CyberCP/settings.py`.
+
+   Add `nodeManager.apps.NodeManagerConfig` to `INSTALLED_APPS`:
+
+   ```python
+   INSTALLED_APPS = [
+       # existing CyberPanel apps...
+       'nodeManager.apps.NodeManagerConfig',
+   ]
+   ```
+
+   This must be done before importing `nodeManager.urls` or running migrations. If it is missing, CyberPanel will fail while loading `/usr/local/CyberCP/CyberCP/urls.py` because `nodeManager.urls` imports views and models.
+
+3. Add the URL include to `/usr/local/CyberCP/CyberCP/urls.py`:
 
    ```python
    path('nodejs/', include(('nodeManager.urls', 'nodeManager'), namespace='nodeManager')),
    ```
 
-3. Ensure `nodeManager` is installed as a Django app if your CyberPanel version requires explicit app registration.
+4. Verify CyberPanel can import the plugin:
 
-4. Run installation checks:
+   ```bash
+   cd /usr/local/CyberCP
+   sudo /usr/local/CyberCP/bin/python manage.py check
+   ```
+
+5. Run installation checks:
 
    ```bash
    cd /usr/local/CyberCP/nodeManager
@@ -23,21 +41,22 @@
    sudo bash post_install
    ```
 
-5. Run migrations:
+6. Run migrations:
 
    ```bash
+   cd /usr/local/CyberCP
    sudo /usr/local/CyberCP/bin/python /usr/local/CyberCP/manage.py migrate nodeManager
    ```
 
 If plugin migrations are unavailable in the target CyberPanel installation, create the two tables from `nodeManager/migrations/0001_initial.py` manually or run `manage.py sqlmigrate nodeManager 0001` on a compatible staging server and apply the generated SQL.
 
-6. Restart CyberPanel:
+7. Restart CyberPanel:
 
    ```bash
    sudo systemctl restart lscpd
    ```
 
-7. Visit:
+8. Visit:
 
    ```text
    https://<panel-host>:8090/nodejs/
