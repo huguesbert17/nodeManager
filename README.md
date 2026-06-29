@@ -47,11 +47,19 @@ Detailed inspection notes are in [docs/CYBERPANEL_FINDINGS.md](docs/CYBERPANEL_F
 
 ## Installation
 
-Copy the plugin into CyberPanel:
+Copy the repository root into CyberPanel:
 
 ```bash
-sudo cp -a nodeManager /usr/local/CyberCP/nodeManager
-sudo cp pre_install post_install uninstall /usr/local/CyberCP/nodeManager/
+sudo mkdir -p /usr/local/CyberCP/nodeManager
+sudo cp -a /home/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
+```
+
+The installed layout should include:
+
+```text
+/usr/local/CyberCP/nodeManager/post_install
+/usr/local/CyberCP/nodeManager/nodeManager/apps.py
+/usr/local/CyberCP/nodeManager/nodeManager/static/nodeManager/nodeManager.css
 ```
 
 Register the Django app in `/usr/local/CyberCP/CyberCP/settings.py`:

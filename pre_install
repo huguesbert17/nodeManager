@@ -2,4 +2,29 @@
 set -euo pipefail
 
 echo "[nodeManager] Pre-install"
-echo "Ensure this plugin directory is copied into /usr/local/CyberCP/nodeManager and included at /nodejs/ in CyberCP/urls.py."
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+echo "Install directory: $PLUGIN_DIR"
+echo "Expected repo-root layout:"
+echo "  $PLUGIN_DIR/nodeManager/apps.py"
+echo "  $PLUGIN_DIR/nodeManager/static/nodeManager/nodeManager.css"
+echo
+
+if [ -f "$PLUGIN_DIR/nodeManager/apps.py" ]; then
+  echo "[nodeManager] Django app package found."
+else
+  echo "[nodeManager] ERROR: Django app package not found at $PLUGIN_DIR/nodeManager/apps.py"
+fi
+
+if [ -d "$PLUGIN_DIR/nodeManager/static/nodeManager" ]; then
+  echo "[nodeManager] Static source found at $PLUGIN_DIR/nodeManager/static/nodeManager"
+elif [ -d "$PLUGIN_DIR/static/nodeManager" ]; then
+  echo "[nodeManager] Static source found at $PLUGIN_DIR/static/nodeManager"
+else
+  echo "[nodeManager] ERROR: Static source not found."
+  echo "Checked:"
+  echo "  $PLUGIN_DIR/nodeManager/static/nodeManager"
+  echo "  $PLUGIN_DIR/static/nodeManager"
+fi
+
+echo "Ensure /usr/local/CyberCP/CyberCP/urls.py includes /nodejs/ and settings.py includes nodeManager.apps.NodeManagerConfig."
