@@ -40,13 +40,12 @@ for candidate in "$PLUGIN_DIR/nodeManager/static/nodeManager" "$PLUGIN_DIR/stati
   fi
 done
 
-if [ -n "$STATIC_SOURCE" ] && [ -d "$CYBERPANEL_ROOT/static" ]; then
+if [ -n "$STATIC_SOURCE" ]; then
   echo "[nodeManager] Installing static assets to $STATIC_TARGET"
+  mkdir -p "$CYBERPANEL_ROOT/static"
   mkdir -p "$STATIC_TARGET"
   cp -a "$STATIC_SOURCE/." "$STATIC_TARGET/"
   chown -R lscpd:lscpd "$STATIC_TARGET" 2>/dev/null || true
-elif [ -n "$STATIC_SOURCE" ]; then
-  echo "[nodeManager] CyberPanel static root not found; static assets were not copied."
 else
   echo "[nodeManager] Static source not found. Checked:"
   echo "  $PLUGIN_DIR/nodeManager/static/nodeManager"
