@@ -9,9 +9,11 @@
   <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:index' %}">Back</a>
 </div>
 
-<form class="nm-panel nm-form" method="post">
+<form class="nm-panel nm-form" method="post" action="{% url 'nodeManager:create' %}">
   {% csrf_token %}
-  {{ form.non_field_errors }}
+  {% if form.non_field_errors %}
+    <div class="nm-form-errors">{{ form.non_field_errors }}</div>
+  {% endif %}
   {% for field in form %}
     <label class="nm-field">
       <span>{{ field.label }}</span>
@@ -20,6 +22,6 @@
       {{ field.errors }}
     </label>
   {% endfor %}
-  <button class="nm-btn" type="submit">Create and Deploy</button>
+  <button class="nm-btn" type="submit" data-submitting-text="Creating...">Create and Deploy</button>
 </form>
 {% endblock %}

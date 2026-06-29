@@ -49,41 +49,45 @@ def create(request):
     settings_obj = NodeManagerSettings.current()
     domains = get_domains_for_user(user)
     form = NodeAppCreateForm(request.POST or None, domains=domains, settings_obj=settings_obj)
-    if request.method == "POST" and form.is_valid():
-        domain = form.cleaned_data["domain"]
-        if not can_manage_domain(user, domain):
-            return HttpResponseForbidden("You cannot manage this domain.")
-        active_count = NodeApp.objects.exclude(status=NodeApp.STATUS_DELETED).filter(owner_user_id=user.pk).count()
-        if not is_admin(user) and active_count >= settings_obj.max_apps_per_user:
-            form.add_error(None, "Maximum Node.js applications reached.")
+    if request.method == "POST":
+        if form.is_valid():
+            domain = form.cleaned_data["domain"]
+            if not can_manage_domain(user, domain):
+                return HttpResponseForbidden("You cannot manage this domain.")
+            active_count = NodeApp.objects.exclude(status=NodeApp.STATUS_DELETED).filter(owner_user_id=user.pk).count()
+            if not is_admin(user) and active_count >= settings_obj.max_apps_per_user:
+                form.add_error(None, "Maximum Node.js applications reached.")
+                messages.error(request, "Application was not created. Maximum Node.js applications reached.")
+            else:
+                website = get_primary_website(domain)
+                app_name = form.cleaned_data["app_name"]
+                app_root = deploy.build_app_root(website, domain, app_name, form.cleaned_data["app_root"])
+                port = reserve_port(settings_obj)
+                app = NodeApp.objects.create(
+                    owner_user_id=user.pk,
+                    owner_username=user.userName,
+                    domain=domain,
+                    website_id=website.pk,
+                    app_name=app_name,
+                    app_root=app_root,
+                    git_url=form.cleaned_data["git_url"],
+                    branch=form.cleaned_data["branch"],
+                    port=port,
+                    package_manager=form.cleaned_data["package_manager"],
+                    install_command=form.cleaned_data["install_command"],
+                    build_command=form.cleaned_data["build_command"],
+                    start_command=form.cleaned_data["start_command"],
+                    pm2_name=deploy.make_pm2_name(user.userName, domain, app_name),
+                )
+                try:
+                    deploy.deploy_app(app, env_text=form.cleaned_data["environment"])
+                    messages.success(request, "Node.js application created and deployed.")
+                    return redirect("nodeManager:detail", app_id=app.pk)
+                except Exception:
+                    messages.error(request, "Application record was created, but deployment failed. Review the application detail and logs.")
+                    return redirect("nodeManager:detail", app_id=app.pk)
         else:
-            website = get_primary_website(domain)
-            app_name = form.cleaned_data["app_name"]
-            app_root = deploy.build_app_root(website, domain, app_name, form.cleaned_data["app_root"])
-            port = reserve_port(settings_obj)
-            app = NodeApp.objects.create(
-                owner_user_id=user.pk,
-                owner_username=user.userName,
-                domain=domain,
-                website_id=website.pk,
-                app_name=app_name,
-                app_root=app_root,
-                git_url=form.cleaned_data["git_url"],
-                branch=form.cleaned_data["branch"],
-                port=port,
-                package_manager=form.cleaned_data["package_manager"],
-                install_command=form.cleaned_data["install_command"],
-                build_command=form.cleaned_data["build_command"],
-                start_command=form.cleaned_data["start_command"],
-                pm2_name=deploy.make_pm2_name(user.userName, domain, app_name),
-            )
-            try:
-                deploy.deploy_app(app, env_text=form.cleaned_data["environment"])
-                messages.success(request, "Node.js application created and deployed.")
-                return redirect("nodeManager:detail", app_id=app.pk)
-            except Exception:
-                messages.error(request, "Deployment failed. Review the application detail and logs.")
-                return redirect("nodeManager:detail", app_id=app.pk)
+            messages.error(request, "Application was not created. Fix the highlighted fields and submit again.")
     return render_cp(request, "nodeManager/create.html", {"form": form})
 
 

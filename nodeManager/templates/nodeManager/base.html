@@ -36,8 +36,11 @@
 .nm-dl dd { margin: 0; overflow-wrap: anywhere; }
 .nm-log { min-height: 180px; max-height: 520px; overflow: auto; background: #0f172a; color: #e2e8f0; border-radius: 6px; padding: 14px; white-space: pre-wrap; }
 .nm-alert { border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; background: #e0f2fe; }
+.nm-alert-error, .nm-alert-danger { background: #fee2e2; color: #991b1b; }
+.nm-form-errors { color: #b91c1c; margin-bottom: 14px; }
 .nm-error, .errorlist { color: #b91c1c; }
 .nm-empty { text-align: center; color: #64748b; }
+.nm-btn[disabled] { cursor: wait; opacity: 0.72; }
 @media (max-width: 820px) {
   .nm-header, .nm-grid { display: block; }
   .nm-actions { margin-top: 14px; }
@@ -50,6 +53,12 @@ document.addEventListener("submit", function (event) {
   var message = form.getAttribute("data-confirm");
   if (message && !window.confirm(message)) {
     event.preventDefault();
+    return;
+  }
+  var button = form.querySelector("button[type='submit'][data-submitting-text]");
+  if (button) {
+    button.disabled = true;
+    button.textContent = button.getAttribute("data-submitting-text");
   }
 });
 </script>
