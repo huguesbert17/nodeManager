@@ -48,7 +48,22 @@
    sudo /usr/local/CyberCP/bin/python /usr/local/CyberCP/manage.py migrate nodeManager
    ```
 
+   Verify Django sees the plugin migration:
+
+   ```bash
+   sudo /usr/local/CyberCP/bin/python /usr/local/CyberCP/manage.py showmigrations nodeManager
+   ```
+
+   Expected output includes:
+
+   ```text
+   nodeManager
+    [X] 0001_initial
+   ```
+
 If plugin migrations are unavailable in the target CyberPanel installation, create the two tables from `nodeManager/migrations/0001_initial.py` manually or run `manage.py sqlmigrate nodeManager 0001` on a compatible staging server and apply the generated SQL.
+
+   If `migrate nodeManager` prints `No migrations to apply` and then warns that CyberPanel's built-in apps have model changes, that warning is not a nodeManager install failure. Do not run `makemigrations` for CyberPanel's built-in apps on a live server unless you are intentionally maintaining that CyberPanel fork. Confirm only `showmigrations nodeManager` and the `node_manager_apps` / `node_manager_settings` tables.
 
 7. Restart CyberPanel:
 
