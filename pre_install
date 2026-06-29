@@ -5,26 +5,30 @@ echo "[nodeManager] Pre-install"
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "Install directory: $PLUGIN_DIR"
-echo "Expected repo-root layout:"
-echo "  $PLUGIN_DIR/nodeManager/apps.py"
-echo "  $PLUGIN_DIR/nodeManager/static/nodeManager/nodeManager.css"
+echo "Expected CyberPanel app layout:"
+echo "  $PLUGIN_DIR/apps.py"
+echo "  $PLUGIN_DIR/static/nodeManager/nodeManager.css"
 echo
 
-if [ -f "$PLUGIN_DIR/nodeManager/apps.py" ]; then
+if [ -f "$PLUGIN_DIR/apps.py" ]; then
   echo "[nodeManager] Django app package found."
+elif [ -f "$PLUGIN_DIR/nodeManager/apps.py" ]; then
+  echo "[nodeManager] ERROR: repo-root layout detected at $PLUGIN_DIR."
+  echo "Django needs apps.py at $PLUGIN_DIR/apps.py for nodeManager.apps.NodeManagerConfig."
 else
-  echo "[nodeManager] ERROR: Django app package not found at $PLUGIN_DIR/nodeManager/apps.py"
+  echo "[nodeManager] ERROR: Django app package not found at $PLUGIN_DIR/apps.py"
 fi
 
-if [ -d "$PLUGIN_DIR/nodeManager/static/nodeManager" ]; then
-  echo "[nodeManager] Static source found at $PLUGIN_DIR/nodeManager/static/nodeManager"
-elif [ -d "$PLUGIN_DIR/static/nodeManager" ]; then
+if [ -d "$PLUGIN_DIR/static/nodeManager" ]; then
   echo "[nodeManager] Static source found at $PLUGIN_DIR/static/nodeManager"
+elif [ -d "$PLUGIN_DIR/nodeManager/static/nodeManager" ]; then
+  echo "[nodeManager] Static source found at $PLUGIN_DIR/nodeManager/static/nodeManager"
+  echo "[nodeManager] WARNING: this also indicates repo-root layout; fix apps.py placement before running manage.py check."
 else
   echo "[nodeManager] ERROR: Static source not found."
   echo "Checked:"
-  echo "  $PLUGIN_DIR/nodeManager/static/nodeManager"
   echo "  $PLUGIN_DIR/static/nodeManager"
+  echo "  $PLUGIN_DIR/nodeManager/static/nodeManager"
 fi
 
 echo "Ensure /usr/local/CyberCP/CyberCP/urls.py includes /nodejs/ and settings.py includes nodeManager.apps.NodeManagerConfig."

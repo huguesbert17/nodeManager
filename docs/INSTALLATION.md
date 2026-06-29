@@ -1,12 +1,17 @@
 # nodeManager installation
 
-1. Copy the repository root to CyberPanel.
+1. Copy the Django app package to CyberPanel.
 
-   If your downloaded repository is at `/home/nodeManager/nodeManager` and contains `docs`, `nodeManager`, `post_install`, `pre_install`, `README.md`, and `uninstall`, copy its contents like this:
+   If your downloaded repository is at `/home/nodeManager/nodeManager` and contains `docs`, `nodeManager`, `post_install`, `pre_install`, `README.md`, and `uninstall`, copy it like this:
 
    ```bash
    sudo mkdir -p /usr/local/CyberCP/nodeManager
-   sudo cp -a /home/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/nodeManager/docs /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/nodeManager/README.md /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/nodeManager/pre_install /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/nodeManager/post_install /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/nodeManager/uninstall /usr/local/CyberCP/nodeManager/
    ```
 
    After copying, the installed layout should include:
@@ -14,18 +19,18 @@
    ```text
    /usr/local/CyberCP/nodeManager/post_install
    /usr/local/CyberCP/nodeManager/pre_install
-   /usr/local/CyberCP/nodeManager/nodeManager/apps.py
-   /usr/local/CyberCP/nodeManager/nodeManager/static/nodeManager/nodeManager.css
-   /usr/local/CyberCP/nodeManager/nodeManager/static/nodeManager/nodeManager.js
+   /usr/local/CyberCP/nodeManager/apps.py
+   /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.css
+   /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.js
    ```
 
    Verify it:
 
    ```bash
    ls -l /usr/local/CyberCP/nodeManager/post_install
-   ls -l /usr/local/CyberCP/nodeManager/nodeManager/apps.py
-   ls -l /usr/local/CyberCP/nodeManager/nodeManager/static/nodeManager/nodeManager.css
-   ls -l /usr/local/CyberCP/nodeManager/nodeManager/static/nodeManager/nodeManager.js
+   ls -l /usr/local/CyberCP/nodeManager/apps.py
+   ls -l /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.css
+   ls -l /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.js
    ```
 
 2. Register the Django app in `/usr/local/CyberCP/CyberCP/settings.py`.

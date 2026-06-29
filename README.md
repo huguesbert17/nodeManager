@@ -47,19 +47,24 @@ Detailed inspection notes are in [docs/CYBERPANEL_FINDINGS.md](docs/CYBERPANEL_F
 
 ## Installation
 
-Copy the repository root into CyberPanel:
+Copy the Django app package into CyberPanel:
 
 ```bash
 sudo mkdir -p /usr/local/CyberCP/nodeManager
-sudo cp -a /home/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/nodeManager/docs /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/nodeManager/README.md /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/nodeManager/pre_install /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/nodeManager/post_install /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/nodeManager/uninstall /usr/local/CyberCP/nodeManager/
 ```
 
 The installed layout should include:
 
 ```text
 /usr/local/CyberCP/nodeManager/post_install
-/usr/local/CyberCP/nodeManager/nodeManager/apps.py
-/usr/local/CyberCP/nodeManager/nodeManager/static/nodeManager/nodeManager.css
+/usr/local/CyberCP/nodeManager/apps.py
+/usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.css
 ```
 
 Register the Django app in `/usr/local/CyberCP/CyberCP/settings.py`:
