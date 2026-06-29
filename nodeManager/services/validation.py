@@ -6,6 +6,7 @@ APP_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{1,63}$")
 DOMAIN_RE = re.compile(r"^(?=.{1,255}$)([a-zA-Z0-9][a-zA-Z0-9-]{0,62}\.)+[a-zA-Z]{2,}$")
 ENV_KEY_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 BRANCH_RE = re.compile(r"^[A-Za-z0-9._/@-]{1,100}$")
+RELATIVE_APP_ROOT_RE = re.compile(r"^[A-Za-z0-9._/-]{1,255}$")
 
 DANGEROUS_TOKENS = (
     ";",
@@ -47,6 +48,20 @@ def validate_git_url(value):
         raise forms.ValidationError("Git URL must start with https:// or git@.")
     if any(token in value for token in (";", "&&", "||", "|", "`", "$(", ">", "<")):
         raise forms.ValidationError("Git URL contains unsafe shell characters.")
+
+
+def validate_relative_app_root(value):
+    if not value:
+        return
+    if value.startswith("/") or value.startswith("~"):
+        raise forms.ValidationError("Application folder must be relative to the website home directory.")
+    if "\\" in value:
+        raise forms.ValidationError("Application folder must use forward slashes.")
+    parts = [part for part in value.split("/") if part]
+    if not parts or any(part in (".", "..") for part in parts):
+        raise forms.ValidationError("Application folder cannot contain . or .. path segments.")
+    if not RELATIVE_APP_ROOT_RE.match(value):
+        raise forms.ValidationError("Application folder can only contain letters, numbers, dots, dashes, underscores, and slashes.")
 
 
 def validate_branch(value):

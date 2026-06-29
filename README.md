@@ -24,6 +24,7 @@ The local repository has been syntax-checked, but the following behaviors must b
 - Admin settings at `/nodejs/settings/`
 - Per-user domain ownership enforcement
 - Create Node.js apps from Git repositories
+- Optional application folder selection relative to the website home directory
 - Configurable package manager, install command, build command, and start command
 - Environment variable editor with key validation
 - Internal port allocation from a configurable range
@@ -88,6 +89,20 @@ sudo systemctl restart lscpd
 ```
 
 Full installation notes are in [docs/INSTALLATION.md](docs/INSTALLATION.md).
+
+If `/static/nodeManager/nodeManager.css` or `/static/nodeManager/nodeManager.js` returns HTML or 404, rerun:
+
+```bash
+cd /usr/local/CyberCP/nodeManager
+sudo bash post_install
+```
+
+Then confirm:
+
+```bash
+ls -l /usr/local/CyberCP/static/nodeManager/nodeManager.css
+ls -l /usr/local/CyberCP/static/nodeManager/nodeManager.js
+```
 
 ## Security Model
 

@@ -16,9 +16,14 @@ def make_pm2_name(owner_username, domain, app_name):
     return "node-%s-%s-%s" % (owner_username, safe_domain, app_name)
 
 
-def build_app_root(website, domain, app_name):
-    base = os.path.realpath(os.path.join(get_app_base_dir(website), domain, app_name))
-    allowed = os.path.realpath(get_app_base_dir(website))
+def build_app_root(website, domain, app_name, relative_root=""):
+    relative_root = (relative_root or "").strip().strip("/")
+    if relative_root:
+        base = os.path.realpath(os.path.join("/home", website.domain, relative_root))
+        allowed = os.path.realpath(os.path.join("/home", website.domain))
+    else:
+        base = os.path.realpath(os.path.join(get_app_base_dir(website), domain, app_name))
+        allowed = os.path.realpath(get_app_base_dir(website))
     if not base.startswith(allowed + os.sep):
         raise RuntimeError("Resolved application root is outside the allowed website directory.")
     return base
@@ -70,6 +75,9 @@ def clone_or_update(app, linux_user):
 
 def run_package_command(app, linux_user, command, status):
     if not command:
+        return
+    if not os.path.exists(os.path.join(app.app_root, "package.json")) and not app.git_url:
+        append_deploy_log(app, "Skipped %s because no package.json exists in an empty non-Git app directory." % command)
         return
     app.status = status
     app.save(update_fields=["status", "updated_at"])

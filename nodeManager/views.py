@@ -59,7 +59,7 @@ def create(request):
         else:
             website = get_primary_website(domain)
             app_name = form.cleaned_data["app_name"]
-            app_root = deploy.build_app_root(website, domain, app_name)
+            app_root = deploy.build_app_root(website, domain, app_name, form.cleaned_data["app_root"])
             port = reserve_port(settings_obj)
             app = NodeApp.objects.create(
                 owner_user_id=user.pk,

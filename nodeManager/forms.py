@@ -1,12 +1,24 @@
 from django import forms
 
 from .models import NodeManagerSettings
-from .services.validation import validate_app_name, validate_command, validate_env_text, validate_git_url
+from .services.validation import (
+    validate_app_name,
+    validate_command,
+    validate_env_text,
+    validate_git_url,
+    validate_relative_app_root,
+)
 
 
 class NodeAppCreateForm(forms.Form):
     domain = forms.ChoiceField()
     app_name = forms.CharField(max_length=64)
+    app_root = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Application folder",
+        help_text="Relative to the website home directory. Leave blank for nodejs/<domain>/<app-name>.",
+    )
     git_url = forms.CharField(max_length=500, required=False)
     branch = forms.CharField(max_length=100, required=False, initial="main")
     package_manager = forms.ChoiceField(choices=())
@@ -27,6 +39,12 @@ class NodeAppCreateForm(forms.Form):
     def clean_app_name(self):
         value = self.cleaned_data["app_name"].strip()
         validate_app_name(value)
+        return value
+
+    def clean_app_root(self):
+        value = (self.cleaned_data.get("app_root") or "").strip()
+        if value:
+            validate_relative_app_root(value)
         return value
 
     def clean_git_url(self):
