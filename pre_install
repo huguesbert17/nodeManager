@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[nodeManager] Pre-install"
+echo "Ensure this plugin directory is copied into /usr/local/CyberCP/nodeManager and included at /nodejs/ in CyberCP/urls.py."

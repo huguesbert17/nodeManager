@@ -1,0 +1,52 @@
+{% extends "nodeManager/base.html" %}
+
+{% block node_content %}
+<div class="nm-header">
+  <div>
+    <h1>All Node.js Applications</h1>
+    <p>Global administrator visibility and control.</p>
+  </div>
+  <div class="nm-actions">
+    <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:settings' %}">Settings</a>
+    <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:index' %}">User View</a>
+  </div>
+</div>
+
+<form class="nm-panel nm-filter" method="get">
+  <input type="text" name="owner" placeholder="Filter by user" value="{{ request.GET.owner }}">
+  <input type="text" name="domain" placeholder="Filter by domain" value="{{ request.GET.domain }}">
+  <input type="text" name="status" placeholder="Filter by status" value="{{ request.GET.status }}">
+  <button class="nm-btn" type="submit">Filter</button>
+</form>
+
+<div class="nm-panel">
+  <table class="nm-table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Domain</th>
+        <th>App</th>
+        <th>Root</th>
+        <th>Port</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in apps %}
+      <tr>
+        <td>{{ app.owner_username }}</td>
+        <td>{{ app.domain }}</td>
+        <td>{{ app.app_name }}</td>
+        <td><code>{{ app.app_root }}</code></td>
+        <td>{{ app.port }}</td>
+        <td><span class="nm-status nm-status-{{ app.status }}">{{ app.status }}</span></td>
+        <td><a class="nm-link" href="{% url 'nodeManager:detail' app.pk %}">Manage</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="nm-empty">No Node.js applications found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "nodeManager/base.html" %}
+
+{% block node_content %}
+<div class="nm-header">
+  <div>
+    <h1>{{ app.app_name }}</h1>
+    <p>{{ app.domain }} · <span class="nm-status nm-status-{{ app.status }}">{{ app.status }}</span></p>
+  </div>
+  <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:index' %}">Back</a>
+</div>
+
+<div class="nm-grid">
+  <section class="nm-panel">
+    <h2>Application</h2>
+    <dl class="nm-dl">
+      <dt>URL</dt><dd><a href="https://{{ app.domain }}/" target="_blank" rel="noopener">https://{{ app.domain }}/</a></dd>
+      <dt>Root</dt><dd><code>{{ app.app_root }}</code></dd>
+      <dt>PM2 process</dt><dd><code>{{ app.pm2_name }}</code></dd>
+      <dt>Port</dt><dd>{{ app.port }}</dd>
+      <dt>Git</dt><dd>{{ app.git_url|default:"Not configured" }}</dd>
+      <dt>Branch</dt><dd>{{ app.branch }}</dd>
+      <dt>Install</dt><dd><code>{{ app.install_command }}</code></dd>
+      <dt>Build</dt><dd><code>{{ app.build_command|default:"-" }}</code></dd>
+      <dt>Start</dt><dd><code>{{ app.start_command }}</code></dd>
+      {% if app.last_error %}<dt>Last error</dt><dd class="nm-error">{{ app.last_error }}</dd>{% endif %}
+    </dl>
+  </section>
+
+  <section class="nm-panel">
+    <h2>Actions</h2>
+    <div class="nm-button-grid">
+      <form method="post" action="{% url 'nodeManager:start' app.pk %}">{% csrf_token %}<button class="nm-btn" type="submit">Start</button></form>
+      <form method="post" action="{% url 'nodeManager:stop' app.pk %}">{% csrf_token %}<button class="nm-btn nm-btn-secondary" type="submit">Stop</button></form>
+      <form method="post" action="{% url 'nodeManager:restart' app.pk %}">{% csrf_token %}<button class="nm-btn" type="submit">Restart</button></form>
+      <form method="post" action="{% url 'nodeManager:redeploy' app.pk %}">{% csrf_token %}<button class="nm-btn" type="submit">Redeploy</button></form>
+      <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:logs' app.pk %}">Logs</a>
+      <form method="post" action="{% url 'nodeManager:delete' app.pk %}" data-confirm="Delete this Node Manager record and PM2 process? Files remain on disk.">
+        {% csrf_token %}<button class="nm-btn nm-btn-danger" type="submit">Delete</button>
+      </form>
+    </div>
+  </section>
+</div>
+
+<section class="nm-panel">
+  <h2>Recent Deploy Log</h2>
+  <pre class="nm-log">{{ app.deploy_log|default:"No deploy log recorded yet." }}</pre>
+</section>
+{% endblock %}

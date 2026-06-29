@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[nodeManager] Uninstall notice"
+echo "This script does not delete user app files, does not delete PM2 processes, and does not remove database tables by default."
+echo "Manual cleanup, if desired:"
+echo "  1. Stop/delete each PM2 process by website user: sudo -u <linux-user> pm2 delete <pm2-name>"
+echo "  2. Remove nodeManager blocks from /usr/local/lsws/conf/vhosts/<domain>/vhost.conf"
+echo "  3. Reload OpenLiteSpeed: sudo /usr/local/lsws/bin/lshttpd -r"
+echo "  4. Remove app files under /home/<domain>/nodejs only after confirming backups"
+echo "  5. Drop node_manager_apps and node_manager_settings tables only if you no longer need records"

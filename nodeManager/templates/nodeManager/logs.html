@@ -1,0 +1,24 @@
+{% extends "nodeManager/base.html" %}
+
+{% block node_content %}
+<div class="nm-header">
+  <div>
+    <h1>Logs</h1>
+    <p>{{ app.domain }} · {{ app.app_name }}</p>
+  </div>
+  <div class="nm-actions">
+    <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:detail' app.pk %}">Back</a>
+    <a class="nm-btn" href="{% url 'nodeManager:logs' app.pk %}">Refresh</a>
+  </div>
+</div>
+
+<section class="nm-panel">
+  <h2>Deploy Logs</h2>
+  <pre class="nm-log">{{ app.deploy_log|default:"No deploy log recorded yet." }}</pre>
+</section>
+
+<section class="nm-panel">
+  <h2>PM2 Logs</h2>
+  <pre class="nm-log">{{ pm2_logs }}</pre>
+</section>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "nodeManager/base.html" %}
+
+{% block node_content %}
+<div class="nm-header">
+  <div>
+    <h1>Node Manager Settings</h1>
+    <p>Global controls for internal ports, app limits, commands, and deployment features.</p>
+  </div>
+  <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:admin_index' %}">Back</a>
+</div>
+
+<form class="nm-panel nm-form" method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for field in form %}
+    <label class="nm-field">
+      <span>{{ field.label }}</span>
+      {{ field }}
+      {{ field.errors }}
+    </label>
+  {% endfor %}
+  <button class="nm-btn" type="submit">Save Settings</button>
+</form>
+{% endblock %}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cyberpanelPluginConfig>
+  <name>nodeManager</name>
+  <type>plugin</type>
+  <description>Client-facing Node.js application manager for CyberPanel</description>
+  <version>1.0.0</version>
+</cyberpanelPluginConfig>

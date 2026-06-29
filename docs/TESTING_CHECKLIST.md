@@ -1,0 +1,24 @@
+# nodeManager testing checklist
+
+- Plugin installs successfully.
+- `/nodejs/` is reachable as an administrator.
+- `/nodejs/` is reachable as a normal CyberPanel user.
+- Normal user only sees domains from `Websites.admin` and related `ChildDomains`.
+- Normal user cannot manually submit another user's domain.
+- Normal user can create a Node app from a public Git repository.
+- App root is created under `/home/<website.domain>/nodejs/<domain>/<app_name>`.
+- App files are owned by `Websites.externalApp`.
+- Dependencies install with an allowed install command.
+- Optional build command works.
+- App starts under PM2 as the website Linux user.
+- PM2 process binds to `127.0.0.1:<internal_port>`.
+- OpenLiteSpeed vhost config is backed up before edit.
+- OpenLiteSpeed proxies `https://domain/` to the internal app.
+- Start, stop, restart, redeploy, logs, and delete actions work.
+- Logs are visible only to the owner or admin.
+- Admin can view all apps and filter by user, domain, and status.
+- Normal user cannot access `/nodejs/admin/` or `/nodejs/settings/`.
+- Invalid commands are rejected.
+- Invalid app names and environment keys are rejected.
+- Port conflicts are rejected.
+- Uninstall does not delete client app files unexpectedly.

@@ -1,0 +1,25 @@
+{% extends "nodeManager/base.html" %}
+
+{% block node_content %}
+<div class="nm-header">
+  <div>
+    <h1>Create Node.js Application</h1>
+    <p>Applications are deployed under the selected website account and proxied through OpenLiteSpeed.</p>
+  </div>
+  <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:index' %}">Back</a>
+</div>
+
+<form class="nm-panel nm-form" method="post">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  {% for field in form %}
+    <label class="nm-field">
+      <span>{{ field.label }}</span>
+      {{ field }}
+      {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+      {{ field.errors }}
+    </label>
+  {% endfor %}
+  <button class="nm-btn" type="submit">Create and Deploy</button>
+</form>
+{% endblock %}

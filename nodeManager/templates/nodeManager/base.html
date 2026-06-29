@@ -1,0 +1,22 @@
+{% extends "baseTemplate/index.html" %}
+{% load static %}
+
+{% block title %}Node.js Applications - CyberPanel{% endblock %}
+
+{% block header_scripts %}
+<link rel="stylesheet" href="{% static 'nodeManager/nodeManager.css' %}">
+<script defer src="{% static 'nodeManager/nodeManager.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+<div class="nm-wrap">
+  {% if messages %}
+    <div class="nm-messages">
+      {% for message in messages %}
+        <div class="nm-alert nm-alert-{{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% block node_content %}{% endblock %}
+</div>
+{% endblock %}

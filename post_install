@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[nodeManager] Post-install checks"
+
+missing=0
+for binary in node npm git; do
+  if ! command -v "$binary" >/dev/null 2>&1; then
+    echo "[nodeManager] Missing required binary: $binary"
+    missing=1
+  else
+    echo "[nodeManager] Found $binary: $(command -v "$binary")"
+  fi
+done
+
+if ! command -v pm2 >/dev/null 2>&1; then
+  echo "[nodeManager] PM2 not found."
+  if command -v npm >/dev/null 2>&1; then
+    echo "[nodeManager] Installing PM2 globally with npm."
+    npm install -g pm2
+  else
+    missing=1
+  fi
+else
+  echo "[nodeManager] Found pm2: $(command -v pm2)"
+fi
+
+mkdir -p /home/cyberpanel/nodeManager
+chmod 750 /home/cyberpanel/nodeManager || true
+
+if [ -x /usr/local/CyberCP/bin/python ] && [ -f /usr/local/CyberCP/manage.py ]; then
+  echo "[nodeManager] Running Django migrations if plugin is installed as a Django app."
+  /usr/local/CyberCP/bin/python /usr/local/CyberCP/manage.py migrate nodeManager || {
+    echo "[nodeManager] Django migration failed. Use docs/INSTALLATION.md fallback SQL notes."
+  }
+else
+  echo "[nodeManager] CyberPanel manage.py not found at expected path; skipping migrations."
+fi
+
+if [ "$missing" -eq 1 ]; then
+  echo "[nodeManager] Install completed with missing prerequisites. Review the messages above."
+  exit 1
+fi
+
+echo "[nodeManager] Post-install complete."

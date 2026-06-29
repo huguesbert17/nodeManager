@@ -1,0 +1,45 @@
+{% extends "nodeManager/base.html" %}
+
+{% block node_content %}
+<div class="nm-header">
+  <div>
+    <h1>Node.js Applications</h1>
+    <p>Deploy and manage Node.js apps for domains you own.</p>
+  </div>
+  <div class="nm-actions">
+    {% if is_admin %}<a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:admin_index' %}">Admin View</a>{% endif %}
+    <a class="nm-btn" href="{% url 'nodeManager:create' %}">Create Application</a>
+  </div>
+</div>
+
+<div class="nm-panel">
+  <table class="nm-table">
+    <thead>
+      <tr>
+        <th>Domain</th>
+        <th>App</th>
+        <th>Root</th>
+        <th>URL</th>
+        <th>Port</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for app in apps %}
+      <tr>
+        <td>{{ app.domain }}</td>
+        <td>{{ app.app_name }}</td>
+        <td><code>{{ app.app_root }}</code></td>
+        <td><a href="https://{{ app.domain }}/" target="_blank" rel="noopener">https://{{ app.domain }}/</a></td>
+        <td>{{ app.port }}</td>
+        <td><span class="nm-status nm-status-{{ app.status }}">{{ app.status }}</span></td>
+        <td><a class="nm-link" href="{% url 'nodeManager:detail' app.pk %}">Manage</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="nm-empty">No Node.js applications found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
