@@ -57,6 +57,8 @@ sudo cp -a /home/nodeManager/nodeManager/README.md /usr/local/CyberCP/nodeManage
 sudo cp -a /home/nodeManager/nodeManager/pre_install /usr/local/CyberCP/nodeManager/
 sudo cp -a /home/nodeManager/nodeManager/post_install /usr/local/CyberCP/nodeManager/
 sudo cp -a /home/nodeManager/nodeManager/uninstall /usr/local/CyberCP/nodeManager/
+sudo mkdir -p /usr/local/CyberCP/static/nodeManager
+sudo cp -a /home/nodeManager/nodeManager/static/nodeManager/. /usr/local/CyberCP/static/nodeManager/
 ```
 
 The installed layout should include:
@@ -65,6 +67,7 @@ The installed layout should include:
 /usr/local/CyberCP/nodeManager/post_install
 /usr/local/CyberCP/nodeManager/apps.py
 /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.css
+/usr/local/CyberCP/static/nodeManager/nodeManager.css
 ```
 
 Register the Django app in `/usr/local/CyberCP/CyberCP/settings.py`:

@@ -33,7 +33,7 @@ CYBERPANEL_ROOT="/usr/local/CyberCP"
 STATIC_TARGET="$CYBERPANEL_ROOT/static/nodeManager"
 STATIC_SOURCE=""
 
-for candidate in "$PLUGIN_DIR/nodeManager/static/nodeManager" "$PLUGIN_DIR/static/nodeManager"; do
+for candidate in "$PLUGIN_DIR/static/nodeManager" "$PLUGIN_DIR/nodeManager/static/nodeManager" "$CYBERPANEL_ROOT/static/nodeManager"; do
   if [ -d "$candidate" ]; then
     STATIC_SOURCE="$candidate"
     break
@@ -44,12 +44,16 @@ if [ -n "$STATIC_SOURCE" ]; then
   echo "[nodeManager] Installing static assets to $STATIC_TARGET"
   mkdir -p "$CYBERPANEL_ROOT/static"
   mkdir -p "$STATIC_TARGET"
-  cp -a "$STATIC_SOURCE/." "$STATIC_TARGET/"
+  if [ "$STATIC_SOURCE" != "$STATIC_TARGET" ]; then
+    cp -a "$STATIC_SOURCE/." "$STATIC_TARGET/"
+  fi
   chown -R lscpd:lscpd "$STATIC_TARGET" 2>/dev/null || true
+  ls -l "$STATIC_TARGET/nodeManager.css" "$STATIC_TARGET/nodeManager.js"
 else
   echo "[nodeManager] Static source not found. Checked:"
-  echo "  $PLUGIN_DIR/nodeManager/static/nodeManager"
   echo "  $PLUGIN_DIR/static/nodeManager"
+  echo "  $PLUGIN_DIR/nodeManager/static/nodeManager"
+  echo "  $CYBERPANEL_ROOT/static/nodeManager"
 fi
 
 if [ -x /usr/local/CyberCP/bin/python ] && [ -f /usr/local/CyberCP/manage.py ]; then
