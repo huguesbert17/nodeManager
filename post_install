@@ -30,16 +30,27 @@ chmod 750 /home/cyberpanel/nodeManager || true
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CYBERPANEL_ROOT="/usr/local/CyberCP"
-STATIC_SOURCE="$PLUGIN_DIR/nodeManager/static/nodeManager"
 STATIC_TARGET="$CYBERPANEL_ROOT/static/nodeManager"
+STATIC_SOURCE=""
 
-if [ -d "$STATIC_SOURCE" ] && [ -d "$CYBERPANEL_ROOT/static" ]; then
+for candidate in "$PLUGIN_DIR/nodeManager/static/nodeManager" "$PLUGIN_DIR/static/nodeManager"; do
+  if [ -d "$candidate" ]; then
+    STATIC_SOURCE="$candidate"
+    break
+  fi
+done
+
+if [ -n "$STATIC_SOURCE" ] && [ -d "$CYBERPANEL_ROOT/static" ]; then
   echo "[nodeManager] Installing static assets to $STATIC_TARGET"
   mkdir -p "$STATIC_TARGET"
   cp -a "$STATIC_SOURCE/." "$STATIC_TARGET/"
   chown -R lscpd:lscpd "$STATIC_TARGET" 2>/dev/null || true
-elif [ -d "$STATIC_SOURCE" ]; then
+elif [ -n "$STATIC_SOURCE" ]; then
   echo "[nodeManager] CyberPanel static root not found; static assets were not copied."
+else
+  echo "[nodeManager] Static source not found. Checked:"
+  echo "  $PLUGIN_DIR/nodeManager/static/nodeManager"
+  echo "  $PLUGIN_DIR/static/nodeManager"
 fi
 
 if [ -x /usr/local/CyberCP/bin/python ] && [ -f /usr/local/CyberCP/manage.py ]; then

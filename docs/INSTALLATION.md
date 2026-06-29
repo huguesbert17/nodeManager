@@ -44,6 +44,8 @@
    `post_install` copies static assets to `/usr/local/CyberCP/static/nodeManager`. If `/static/nodeManager/nodeManager.css` returns HTML or 404 in the browser, rerun `post_install` and confirm these files exist:
 
    ```bash
+   cd /usr/local/CyberCP/nodeManager
+   sudo bash post_install
    ls -l /usr/local/CyberCP/static/nodeManager/nodeManager.css
    ls -l /usr/local/CyberCP/static/nodeManager/nodeManager.js
    ```

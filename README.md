@@ -95,11 +95,6 @@ If `/static/nodeManager/nodeManager.css` or `/static/nodeManager/nodeManager.js`
 ```bash
 cd /usr/local/CyberCP/nodeManager
 sudo bash post_install
-```
-
-Then confirm:
-
-```bash
 ls -l /usr/local/CyberCP/static/nodeManager/nodeManager.css
 ls -l /usr/local/CyberCP/static/nodeManager/nodeManager.js
 ```
