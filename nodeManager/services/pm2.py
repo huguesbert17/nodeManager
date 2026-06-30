@@ -4,14 +4,17 @@ import subprocess
 
 
 def _run_as_user(linux_user, args, cwd=None, env=None, timeout=300):
-    command = ["sudo", "-u", linux_user] + args
-    merged_env = os.environ.copy()
+    command = ["sudo", "-u", linux_user]
     if env:
-        merged_env.update(env)
+        command += ["env"] + ["%s=%s" % (key, value) for key, value in sorted(env.items())]
+    if cwd:
+        script = "cd %s && exec %s" % (shlex.quote(cwd), shlex.join(args))
+        command += ["bash", "-lc", script]
+    else:
+        command += args
     result = subprocess.run(
         command,
-        cwd=cwd,
-        env=merged_env,
+        env=os.environ.copy(),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,

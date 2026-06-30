@@ -30,15 +30,25 @@ def build_app_root(website, domain, app_name, relative_root=""):
 
 
 def _run(command, linux_user, cwd=None, timeout=600):
+    sudo_command = ["sudo", "-u", linux_user]
+    if cwd:
+        script = "cd %s && exec %s" % (shlex.quote(cwd), shlex.join(command))
+        sudo_command += ["bash", "-lc", script]
+    else:
+        sudo_command += command
     result = subprocess.run(
-        ["sudo", "-u", linux_user] + command,
-        cwd=cwd,
+        sudo_command,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         timeout=timeout,
     )
     return result.returncode, result.stdout
+
+
+def _path_exists(linux_user, path):
+    code, _output = _run(["test", "-e", path], linux_user, timeout=30)
+    return code == 0
 
 
 def _write_env_file(app, env_text, linux_user):
@@ -61,7 +71,7 @@ def _write_env_file(app, env_text, linux_user):
     if proc.returncode != 0:
         append_deploy_log(app, "Unable to write .env file.")
         raise RuntimeError("Unable to write environment file.")
-    _run(["chmod", "600", ".env"], linux_user, cwd=app.app_root, timeout=60)
+    _run(["chmod", "600", path], linux_user, timeout=60)
     app.env_file_path = path
     app.save(update_fields=["env_file_path", "updated_at"])
     return path
@@ -78,7 +88,7 @@ def prepare_app_directory(app, linux_user):
 def clone_or_update(app, linux_user):
     if not app.git_url:
         return 0, "No Git repository configured."
-    if os.path.exists(os.path.join(app.app_root, ".git")):
+    if _path_exists(linux_user, os.path.join(app.app_root, ".git")):
         return _run(["git", "pull", "--ff-only"], linux_user, cwd=app.app_root, timeout=300)
     branch_args = ["--branch", app.branch] if app.branch else []
     return _run(["git", "clone"] + branch_args + [app.git_url, app.app_root], linux_user, timeout=600)
@@ -87,7 +97,7 @@ def clone_or_update(app, linux_user):
 def run_package_command(app, linux_user, command, status):
     if not command:
         return
-    if not os.path.exists(os.path.join(app.app_root, "package.json")) and not app.git_url:
+    if not _path_exists(linux_user, os.path.join(app.app_root, "package.json")) and not app.git_url:
         append_deploy_log(app, "Skipped %s because no package.json exists in an empty non-Git app directory." % command)
         return
     app.status = status
