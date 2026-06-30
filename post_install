@@ -30,8 +30,46 @@ chmod 750 /home/cyberpanel/nodeManager || true
 
 PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CYBERPANEL_ROOT="/usr/local/CyberCP"
+HELPER_TARGET="$CYBERPANEL_ROOT/nodeManager/bin/node_manager_run_as_user"
 STATIC_TARGET="$CYBERPANEL_ROOT/static/nodeManager"
 STATIC_SOURCE=""
+
+HELPER_SOURCE=""
+for candidate in "$PLUGIN_DIR/bin/node_manager_run_as_user" "$PLUGIN_DIR/nodeManager/bin/node_manager_run_as_user" "$CYBERPANEL_ROOT/nodeManager/bin/node_manager_run_as_user"; do
+  if [ -f "$candidate" ]; then
+    HELPER_SOURCE="$candidate"
+    break
+  fi
+done
+
+if [ -n "$HELPER_SOURCE" ]; then
+  echo "[nodeManager] Installing run-as-user helper to $HELPER_TARGET"
+  mkdir -p "$(dirname "$HELPER_TARGET")"
+  if [ "$HELPER_SOURCE" != "$HELPER_TARGET" ]; then
+    cp -a "$HELPER_SOURCE" "$HELPER_TARGET"
+  fi
+  chown root:root "$HELPER_TARGET"
+  chmod 750 "$HELPER_TARGET"
+  if id lscpd >/dev/null 2>&1; then
+    cat >/etc/sudoers.d/nodeManager <<EOF
+Defaults:lscpd !requiretty
+lscpd ALL=(root) NOPASSWD: $HELPER_TARGET
+EOF
+    chown root:root /etc/sudoers.d/nodeManager
+    chmod 440 /etc/sudoers.d/nodeManager
+    if command -v visudo >/dev/null 2>&1; then
+      visudo -cf /etc/sudoers.d/nodeManager
+    fi
+    echo "[nodeManager] Installed sudoers rule for lscpd."
+  else
+    echo "[nodeManager] lscpd user not found; sudoers rule was not installed."
+  fi
+else
+  echo "[nodeManager] Run-as-user helper not found. Checked:"
+  echo "  $PLUGIN_DIR/bin/node_manager_run_as_user"
+  echo "  $PLUGIN_DIR/nodeManager/bin/node_manager_run_as_user"
+  echo "  $CYBERPANEL_ROOT/nodeManager/bin/node_manager_run_as_user"
+fi
 
 for candidate in "$PLUGIN_DIR/static/nodeManager" "$PLUGIN_DIR/nodeManager/static/nodeManager" "$CYBERPANEL_ROOT/static/nodeManager"; do
   if [ -d "$candidate" ]; then

@@ -9,7 +9,7 @@
   <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:index' %}">Back</a>
 </div>
 
-<form class="nm-panel nm-form" method="post" action="{% url 'nodeManager:create' %}">
+<form class="nm-panel nm-form" method="post" action="{% url 'nodeManager:create' %}" enctype="multipart/form-data">
   {% csrf_token %}
   {% if form.non_field_errors %}
     <div class="nm-form-errors">{{ form.non_field_errors }}</div>

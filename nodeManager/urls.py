@@ -11,6 +11,7 @@ urlpatterns = [
     path("settings/", views.settings, name="settings"),
     path("app/<int:app_id>/", views.legacy_detail_redirect, name="legacy_detail"),
     path("app/<uuid:public_id>/", views.detail, name="detail"),
+    path("app/<uuid:public_id>/edit/", views.edit, name="edit"),
     path("app/<uuid:public_id>/start/", views.start, name="start"),
     path("app/<uuid:public_id>/stop/", views.stop, name="stop"),
     path("app/<uuid:public_id>/restart/", views.restart, name="restart"),

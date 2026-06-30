@@ -11,6 +11,9 @@ from .users import get_app_base_dir, get_linux_user, get_primary_website
 from .validation import parse_env_text
 
 
+RUN_AS_HELPER = "/usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user"
+
+
 def make_pm2_name(owner_username, domain, app_name):
     safe_domain = domain.replace(".", "-")
     return "node-%s-%s-%s" % (owner_username, safe_domain, app_name)
@@ -30,7 +33,17 @@ def build_app_root(website, domain, app_name, relative_root=""):
 
 
 def _run(command, linux_user, cwd=None, timeout=600):
-    sudo_command = ["sudo", "-u", linux_user]
+    if os.path.exists(RUN_AS_HELPER):
+        sudo_command = ["sudo", "-n", RUN_AS_HELPER, linux_user, cwd or "-"] + command
+        result = subprocess.run(
+            sudo_command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=timeout,
+        )
+        return result.returncode, result.stdout
+    sudo_command = ["sudo", "-n", "-u", linux_user]
     if cwd:
         script = "cd %s && exec %s" % (shlex.quote(cwd), shlex.join(command))
         sudo_command += ["bash", "-lc", script]
@@ -66,7 +79,7 @@ def _write_env_file(app, env_text, linux_user):
         escaped = value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
         lines.append('%s="%s"' % (key, escaped))
     proc = subprocess.run(
-        ["sudo", "-u", linux_user, "tee", path],
+        (["sudo", "-n", RUN_AS_HELPER, linux_user, "-", "tee", path] if os.path.exists(RUN_AS_HELPER) else ["sudo", "-n", "-u", linux_user, "tee", path]),
         input="\n".join(lines) + "\n",
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -80,6 +93,12 @@ def _write_env_file(app, env_text, linux_user):
     app.env_file_path = path
     app.save(update_fields=["env_file_path", "updated_at"])
     return path
+
+
+def write_env_file(app, env_text):
+    website = get_primary_website(app.domain)
+    linux_user = get_linux_user(website)
+    return _write_env_file(app, env_text, linux_user)
 
 
 def prepare_app_directory(app, linux_user):

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ "$#" -lt 3 ]; then
+  echo "Usage: node_manager_run_as_user <linux-user> <cwd|-> <command> [args...]" >&2
+  exit 64
+fi
+
+RUN_AS="$1"
+CWD="$2"
+shift 2
+
+if ! [[ "$RUN_AS" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "Invalid target user." >&2
+  exit 64
+fi
+
+if ! getent passwd "$RUN_AS" >/dev/null 2>&1; then
+  echo "Target user does not exist: $RUN_AS" >&2
+  exit 67
+fi
+
+if [ "$CWD" != "-" ]; then
+  REAL_CWD="$(realpath -m "$CWD")"
+  case "$REAL_CWD" in
+    /home/*) ;;
+    *)
+      echo "Refusing to run outside /home: $REAL_CWD" >&2
+      exit 64
+      ;;
+  esac
+  cd "$REAL_CWD"
+fi
+
+exec sudo -n -u "$RUN_AS" "$@"

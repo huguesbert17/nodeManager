@@ -24,6 +24,9 @@
       <dt>Start</dt><dd><code>{{ app.start_command }}</code></dd>
       {% if app.last_error %}<dt>Last error</dt><dd class="nm-error">{{ app.last_error }}</dd>{% endif %}
     </dl>
+    <div class="nm-actions nm-section-actions">
+      <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:edit' app.public_id %}">Edit</a>
+    </div>
   </section>
 
   <section class="nm-panel">

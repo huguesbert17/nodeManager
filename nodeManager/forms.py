@@ -26,8 +26,13 @@ class NodeAppCreateForm(forms.Form):
     build_command = forms.CharField(max_length=120, required=False)
     start_command = forms.CharField(max_length=160, initial="npm start")
     environment = forms.CharField(required=False, widget=forms.Textarea)
+    env_file = forms.FileField(
+        required=False,
+        label="Upload .env file",
+        help_text="Optional. Uploading a .env file fills the environment values for this deploy.",
+    )
 
-    def __init__(self, *args, domains=None, settings_obj=None, **kwargs):
+    def __init__(self, *args, domains=None, settings_obj=None, lock_identity=False, **kwargs):
         super().__init__(*args, **kwargs)
         settings_obj = settings_obj or NodeManagerSettings.current()
         domains = domains or []
@@ -35,6 +40,9 @@ class NodeAppCreateForm(forms.Form):
         self.fields["domain"].choices = [(domain, domain) for domain in domains]
         managers = settings_obj.list_value("allowed_package_managers")
         self.fields["package_manager"].choices = [(item, item) for item in managers]
+        if lock_identity:
+            self.fields["domain"].disabled = True
+            self.fields["app_name"].disabled = True
 
     def clean_app_name(self):
         value = self.cleaned_data["app_name"].strip()
@@ -80,6 +88,34 @@ class NodeAppCreateForm(forms.Form):
             raise forms.ValidationError("Environment editing is disabled by the administrator.")
         validate_env_text(value)
         return value
+
+    def clean_env_file(self):
+        upload = self.cleaned_data.get("env_file")
+        if not upload:
+            return upload
+        if not self.settings_obj.allow_env_editor:
+            raise forms.ValidationError("Environment editing is disabled by the administrator.")
+        if upload.size > 128 * 1024:
+            raise forms.ValidationError(".env file is too large. Maximum size is 128 KB.")
+        if upload.name and not upload.name.endswith(".env"):
+            raise forms.ValidationError("Upload a file ending in .env.")
+        try:
+            text = upload.read().decode("utf-8")
+        except UnicodeDecodeError:
+            raise forms.ValidationError(".env file must be UTF-8 text.")
+        validate_env_text(text)
+        return text
+
+    def clean(self):
+        cleaned = super().clean()
+        env_file_text = cleaned.get("env_file")
+        if env_file_text:
+            cleaned["environment"] = env_file_text
+        return cleaned
+
+
+class NodeAppEditForm(NodeAppCreateForm):
+    pass
 
 
 class NodeManagerSettingsForm(forms.ModelForm):

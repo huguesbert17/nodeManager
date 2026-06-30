@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from plogical.httpProc import httpProc
 
-from .forms import NodeAppCreateForm, NodeManagerSettingsForm
+from .forms import NodeAppCreateForm, NodeAppEditForm, NodeManagerSettingsForm
 from .models import NodeApp, NodeManagerSettings
 from .services import deploy, openlitespeed, pm2
 from .services.logs import append_deploy_log, get_pm2_logs
@@ -46,6 +46,27 @@ def release_legacy_deleted_app_constraints():
         app.save(update_fields=["app_name", "pm2_name", "port", "updated_at"])
 
 
+def relative_app_root(app):
+    prefix = "/home/%s/" % app.domain
+    if app.app_root.startswith(prefix):
+        return app.app_root[len(prefix) :]
+    return ""
+
+
+def app_form_initial(app):
+    return {
+        "domain": app.domain,
+        "app_name": app.app_name,
+        "app_root": relative_app_root(app),
+        "git_url": app.git_url,
+        "branch": app.branch,
+        "package_manager": app.package_manager,
+        "install_command": app.install_command,
+        "build_command": app.build_command,
+        "start_command": app.start_command,
+    }
+
+
 def render_cp(request, template, context=None):
     proc = httpProc(request, template, context or {}, "admin")
     return proc.render()
@@ -71,7 +92,7 @@ def create(request):
     user = get_current_cyberpanel_user(request)
     settings_obj = NodeManagerSettings.current()
     domains = get_domains_for_user(user)
-    form = NodeAppCreateForm(request.POST or None, domains=domains, settings_obj=settings_obj)
+    form = NodeAppCreateForm(request.POST or None, request.FILES or None, domains=domains, settings_obj=settings_obj)
     if request.method == "POST":
         if form.is_valid():
             domain = form.cleaned_data["domain"]
@@ -140,6 +161,73 @@ def detail(request, public_id):
     if not can_view_node_app(user, app):
         return HttpResponseForbidden("You cannot view this application.")
     return render_cp(request, "nodeManager/detail.html", {"app": app, "is_admin": is_admin(user)})
+
+
+@cyberpanel_login_required
+def edit(request, public_id):
+    user = get_current_cyberpanel_user(request)
+    app = get_object_or_404(NodeApp, public_id=public_id)
+    if not can_manage_node_app(user, app):
+        return HttpResponseForbidden("You cannot manage this application.")
+    settings_obj = NodeManagerSettings.current()
+    domains = get_domains_for_user(user)
+    if app.domain not in domains:
+        domains = list(domains) + [app.domain]
+    form = NodeAppEditForm(
+        request.POST or None,
+        request.FILES or None,
+        domains=domains,
+        settings_obj=settings_obj,
+        lock_identity=True,
+        initial=app_form_initial(app),
+    )
+    if request.method == "POST":
+        if form.is_valid():
+            try:
+                website = get_primary_website(app.domain)
+                app.app_root = deploy.build_app_root(website, app.domain, app.app_name, form.cleaned_data["app_root"])
+                app.git_url = form.cleaned_data["git_url"]
+                app.branch = form.cleaned_data["branch"]
+                app.package_manager = form.cleaned_data["package_manager"]
+                app.install_command = form.cleaned_data["install_command"]
+                app.build_command = form.cleaned_data["build_command"]
+                app.start_command = form.cleaned_data["start_command"]
+                app.save(
+                    update_fields=[
+                        "app_root",
+                        "git_url",
+                        "branch",
+                        "package_manager",
+                        "install_command",
+                        "build_command",
+                        "start_command",
+                        "updated_at",
+                    ]
+                )
+            except Exception:
+                logger.exception("nodeManager edit failed while saving application settings")
+                form.add_error(None, "Application settings could not be saved. Review the CyberPanel error logs.")
+                messages.error(request, "Application settings were not saved.")
+            else:
+                if "save_redeploy" in request.POST:
+                    try:
+                        deploy.deploy_app(app, env_text=form.cleaned_data["environment"])
+                    except Exception:
+                        messages.error(request, "Application settings saved, but redeploy failed. Review the application detail and logs.")
+                        return redirect("nodeManager:detail", public_id=app.public_id)
+                    messages.success(request, "Application settings saved and redeployed.")
+                else:
+                    if form.cleaned_data["environment"]:
+                        try:
+                            deploy.write_env_file(app, form.cleaned_data["environment"])
+                        except Exception:
+                            messages.error(request, "Application settings saved, but .env update failed. Review the application detail and logs.")
+                            return redirect("nodeManager:detail", public_id=app.public_id)
+                    messages.success(request, "Application settings saved.")
+                return redirect("nodeManager:detail", public_id=app.public_id)
+        else:
+            messages.error(request, "Application settings were not saved. Fix the highlighted fields and submit again.")
+    return render_cp(request, "nodeManager/edit.html", {"form": form, "app": app})
 
 
 @cyberpanel_login_required

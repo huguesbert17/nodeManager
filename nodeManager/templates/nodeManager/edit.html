@@ -1,0 +1,30 @@
+{% extends "nodeManager/base.html" %}
+
+{% block node_content %}
+<div class="nm-header">
+  <div>
+    <h1>Edit {{ app.app_name }}</h1>
+    <p>{{ app.domain }} · update commands, source settings, and environment values.</p>
+  </div>
+  <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:detail' app.public_id %}">Back</a>
+</div>
+
+<form class="nm-panel nm-form" method="post" action="{% url 'nodeManager:edit' app.public_id %}" enctype="multipart/form-data">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+    <div class="nm-form-errors">{{ form.non_field_errors }}</div>
+  {% endif %}
+  {% for field in form %}
+    <label class="nm-field">
+      <span>{{ field.label }}</span>
+      {{ field }}
+      {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+      {{ field.errors }}
+    </label>
+  {% endfor %}
+  <div class="nm-actions">
+    <button class="nm-btn nm-btn-secondary" type="submit" name="save" value="1" data-submitting-text="Saving...">Save</button>
+    <button class="nm-btn" type="submit" name="save_redeploy" value="1" data-submitting-text="Redeploying...">Save and Redeploy</button>
+  </div>
+</form>
+{% endblock %}
