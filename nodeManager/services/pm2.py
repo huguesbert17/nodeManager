@@ -65,10 +65,6 @@ def start_app(app, linux_user):
         app.app_root,
         "--instances",
         "1",
-        "--max-restarts",
-        "5",
-        "--min-uptime",
-        "10s",
     ]
     if app.memory_limit:
         args += ["--max-memory-restart", app.memory_limit]
