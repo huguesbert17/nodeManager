@@ -51,12 +51,13 @@ Copy the Django app package into CyberPanel:
 
 ```bash
 sudo mkdir -p /usr/local/CyberCP/nodeManager
-sudo cp -a /home/nodeManager/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
-sudo cp -a /home/nodeManager/nodeManager/docs /usr/local/CyberCP/nodeManager/
-sudo cp -a /home/nodeManager/nodeManager/README.md /usr/local/CyberCP/nodeManager/
-sudo cp -a /home/nodeManager/nodeManager/pre_install /usr/local/CyberCP/nodeManager/
-sudo cp -a /home/nodeManager/nodeManager/post_install /usr/local/CyberCP/nodeManager/
-sudo cp -a /home/nodeManager/nodeManager/uninstall /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/bin /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/docs /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/README.md /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/pre_install /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/post_install /usr/local/CyberCP/nodeManager/
+sudo cp -a /home/nodeManager/uninstall /usr/local/CyberCP/nodeManager/
 sudo mkdir -p /usr/local/CyberCP/static/nodeManager
 sudo cp -a /home/nodeManager/nodeManager/static/nodeManager/. /usr/local/CyberCP/static/nodeManager/
 ```
@@ -65,6 +66,7 @@ The installed layout should include:
 
 ```text
 /usr/local/CyberCP/nodeManager/post_install
+/usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user
 /usr/local/CyberCP/nodeManager/apps.py
 /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.css
 /usr/local/CyberCP/static/nodeManager/nodeManager.css
@@ -96,6 +98,7 @@ Expected migration state:
 ```text
 nodeManager
  [X] 0001_initial
+ [X] 0002_nodeapp_public_id
 ```
 
 Restart CyberPanel:
@@ -113,6 +116,16 @@ cd /usr/local/CyberCP/nodeManager
 sudo bash post_install
 ls -l /usr/local/CyberCP/static/nodeManager/nodeManager.css
 ls -l /usr/local/CyberCP/static/nodeManager/nodeManager.js
+```
+
+If deploy actions show `sudo: a password is required`, rerun `post_install` and verify the run-as-user helper:
+
+```bash
+cd /usr/local/CyberCP/nodeManager
+sudo bash post_install
+ls -l /usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user
+sudo cat /etc/sudoers.d/nodeManager
+sudo visudo -cf /etc/sudoers.d/nodeManager
 ```
 
 ## Security Model

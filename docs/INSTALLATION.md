@@ -6,12 +6,13 @@
 
    ```bash
    sudo mkdir -p /usr/local/CyberCP/nodeManager
-   sudo cp -a /home/nodeManager/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
-   sudo cp -a /home/nodeManager/nodeManager/docs /usr/local/CyberCP/nodeManager/
-   sudo cp -a /home/nodeManager/nodeManager/README.md /usr/local/CyberCP/nodeManager/
-   sudo cp -a /home/nodeManager/nodeManager/pre_install /usr/local/CyberCP/nodeManager/
-   sudo cp -a /home/nodeManager/nodeManager/post_install /usr/local/CyberCP/nodeManager/
-   sudo cp -a /home/nodeManager/nodeManager/uninstall /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/nodeManager/. /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/bin /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/docs /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/README.md /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/pre_install /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/post_install /usr/local/CyberCP/nodeManager/
+   sudo cp -a /home/nodeManager/uninstall /usr/local/CyberCP/nodeManager/
    sudo mkdir -p /usr/local/CyberCP/static/nodeManager
    sudo cp -a /home/nodeManager/nodeManager/static/nodeManager/. /usr/local/CyberCP/static/nodeManager/
    ```
@@ -21,6 +22,7 @@
    ```text
    /usr/local/CyberCP/nodeManager/post_install
    /usr/local/CyberCP/nodeManager/pre_install
+   /usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user
    /usr/local/CyberCP/nodeManager/apps.py
    /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.css
    /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.js
@@ -32,6 +34,7 @@
 
    ```bash
    ls -l /usr/local/CyberCP/nodeManager/post_install
+   ls -l /usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user
    ls -l /usr/local/CyberCP/nodeManager/apps.py
    ls -l /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.css
    ls -l /usr/local/CyberCP/nodeManager/static/nodeManager/nodeManager.js
@@ -73,7 +76,17 @@
    sudo bash post_install
    ```
 
-   `post_install` creates `/usr/local/CyberCP/static/nodeManager` and copies static assets there. If `/static/nodeManager/nodeManager.css` returns HTML or 404 in the browser, rerun `post_install` and confirm these files exist:
+   `post_install` installs `/usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user`, creates `/etc/sudoers.d/nodeManager`, creates `/usr/local/CyberCP/static/nodeManager`, and copies static assets there. If deploy actions show `sudo: a password is required`, rerun `post_install` and confirm the helper and sudoers file exist:
+
+   ```bash
+   cd /usr/local/CyberCP/nodeManager
+   sudo bash post_install
+   ls -l /usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user
+   sudo cat /etc/sudoers.d/nodeManager
+   sudo visudo -cf /etc/sudoers.d/nodeManager
+   ```
+
+   If `/static/nodeManager/nodeManager.css` returns HTML or 404 in the browser, rerun `post_install` and confirm these files exist:
 
    ```bash
    cd /usr/local/CyberCP/nodeManager
@@ -100,11 +113,12 @@
    ```text
    nodeManager
     [X] 0001_initial
+    [X] 0002_nodeapp_public_id
    ```
 
 If plugin migrations are unavailable in the target CyberPanel installation, create the two tables from `nodeManager/migrations/0001_initial.py` manually or run `manage.py sqlmigrate nodeManager 0001` on a compatible staging server and apply the generated SQL.
 
-   If `migrate nodeManager` prints `No migrations to apply` and then warns that CyberPanel's built-in apps have model changes, that warning is not a nodeManager install failure. Do not run `makemigrations` for CyberPanel's built-in apps on a live server unless you are intentionally maintaining that CyberPanel fork. Confirm only `showmigrations nodeManager` and the `node_manager_apps` / `node_manager_settings` tables.
+If `migrate nodeManager` prints `No migrations to apply` and then warns that CyberPanel's built-in apps have model changes, that warning is not a nodeManager install failure. Do not run `makemigrations` for CyberPanel's built-in apps on a live server unless you are intentionally maintaining that CyberPanel fork. Confirm only `showmigrations nodeManager` and the `node_manager_apps` / `node_manager_settings` tables.
 
 7. Restart CyberPanel:
 
