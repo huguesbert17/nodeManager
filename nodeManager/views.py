@@ -10,7 +10,7 @@ from plogical.httpProc import httpProc
 from .forms import NodeAppCreateForm, NodeAppEditForm, NodeManagerSettingsForm
 from .models import NodeApp, NodeManagerSettings
 from .services import deploy, openlitespeed, pm2
-from .services.logs import append_deploy_log, get_pm2_logs
+from .services.logs import append_deploy_log, get_pm2_logs, sanitize_log_text
 from .services.permissions import (
     can_manage_domain,
     can_manage_node_app,
@@ -278,7 +278,7 @@ def _action_redirect(app):
 
 
 def _short_error(value):
-    value = str(value or "").strip()
+    value = sanitize_log_text(value).strip()
     if len(value) > 4000:
         return value[-4000:]
     return value
@@ -370,7 +370,7 @@ def redeploy(request, public_id):
     except Exception as exc:
         messages.error(request, "Redeploy failed. Review the application logs.")
         if not app.last_error:
-            app.last_error = str(exc)
+            app.last_error = _short_error(exc)
             app.save(update_fields=["last_error", "updated_at"])
     return _action_redirect(app)
 

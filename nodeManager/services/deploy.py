@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from ..models import NodeApp
 from . import openlitespeed, pm2
-from .logs import append_deploy_log
+from .logs import append_deploy_log, sanitize_log_text
 from .users import get_app_base_dir, get_linux_user, get_primary_website
 from .validation import parse_env_text
 
@@ -130,7 +130,7 @@ def run_package_command(app, linux_user, command, status):
     code, output = _run(shlex.split(command), linux_user, cwd=app.app_root, timeout=900)
     append_deploy_log(app, "$ %s\n%s" % (command, output))
     if code != 0:
-        detail = output.strip().splitlines()[-1] if output.strip() else "no command output"
+        detail = sanitize_log_text(output).strip().splitlines()[-1] if output and output.strip() else "no command output"
         raise RuntimeError("Command failed: %s: %s" % (command, detail))
 
 
@@ -162,6 +162,6 @@ def deploy_app(app, env_text=""):
         app.save(update_fields=["status", "last_error", "last_deploy_at", "updated_at"])
     except Exception as exc:
         app.status = NodeApp.STATUS_ERROR
-        app.last_error = str(exc)
+        app.last_error = sanitize_log_text(exc)
         app.save(update_fields=["status", "last_error", "updated_at"])
         raise
