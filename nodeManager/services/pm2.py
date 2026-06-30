@@ -29,6 +29,17 @@ def _run_as_user(linux_user, args, cwd=None, env=None, timeout=300):
     return 1, HELPER_SETUP_ERROR
 
 
+def _command_exists(linux_user, command):
+    code, _output = _run_as_user(linux_user, ["sh", "-lc", "command -v %s" % shlex.quote(command)], timeout=30)
+    return code == 0
+
+
+def _low_priority_process_args(linux_user, executable, command_args):
+    if not _command_exists(linux_user, "nice"):
+        return executable, command_args
+    return "nice", ["-n", "10", executable] + command_args
+
+
 def command_to_pm2_args(command):
     parts = shlex.split(command)
     if not parts:
@@ -40,8 +51,24 @@ def command_to_pm2_args(command):
 
 def start_app(app, linux_user):
     executable, command_args = command_to_pm2_args(app.start_command)
+    executable, command_args = _low_priority_process_args(linux_user, executable, command_args)
     env = {"PORT": str(app.port), "HOST": "127.0.0.1", "NODE_ENV": "production"}
-    args = ["pm2", "start", executable, "--name", app.pm2_name, "--cwd", app.app_root]
+    delete_app(app, linux_user)
+    args = [
+        "pm2",
+        "start",
+        executable,
+        "--name",
+        app.pm2_name,
+        "--cwd",
+        app.app_root,
+        "--instances",
+        "1",
+        "--max-restarts",
+        "5",
+        "--min-uptime",
+        "10s",
+    ]
     if app.memory_limit:
         args += ["--max-memory-restart", app.memory_limit]
     if command_args:
@@ -54,7 +81,7 @@ def stop_app(app, linux_user):
 
 
 def restart_app(app, linux_user):
-    return _run_as_user(linux_user, ["pm2", "restart", app.pm2_name, "--update-env"], cwd=app.app_root, timeout=120)
+    return start_app(app, linux_user)
 
 
 def delete_app(app, linux_user):
