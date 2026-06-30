@@ -1,4 +1,7 @@
+import logging
+
 from django.contrib import messages
+from django.db import DatabaseError
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
@@ -21,6 +24,9 @@ from .services.permissions import (
 )
 from .services.ports import reserve_port
 from .services.users import get_linux_user, get_primary_website
+
+
+logger = logging.getLogger(__name__)
 
 
 def render_cp(request, template, context=None):
@@ -59,32 +65,42 @@ def create(request):
                 form.add_error(None, "Maximum Node.js applications reached.")
                 messages.error(request, "Application was not created. Maximum Node.js applications reached.")
             else:
-                website = get_primary_website(domain)
-                app_name = form.cleaned_data["app_name"]
-                app_root = deploy.build_app_root(website, domain, app_name, form.cleaned_data["app_root"])
-                port = reserve_port(settings_obj)
-                app = NodeApp.objects.create(
-                    owner_user_id=user.pk,
-                    owner_username=user.userName,
-                    domain=domain,
-                    website_id=website.pk,
-                    app_name=app_name,
-                    app_root=app_root,
-                    git_url=form.cleaned_data["git_url"],
-                    branch=form.cleaned_data["branch"],
-                    port=port,
-                    package_manager=form.cleaned_data["package_manager"],
-                    install_command=form.cleaned_data["install_command"],
-                    build_command=form.cleaned_data["build_command"],
-                    start_command=form.cleaned_data["start_command"],
-                    pm2_name=deploy.make_pm2_name(user.userName, domain, app_name),
-                )
                 try:
-                    deploy.deploy_app(app, env_text=form.cleaned_data["environment"])
-                    messages.success(request, "Node.js application created and deployed.")
-                    return redirect("nodeManager:detail", public_id=app.public_id)
+                    website = get_primary_website(domain)
+                    app_name = form.cleaned_data["app_name"]
+                    app_root = deploy.build_app_root(website, domain, app_name, form.cleaned_data["app_root"])
+                    port = reserve_port(settings_obj)
+                    app = NodeApp.objects.create(
+                        owner_user_id=user.pk,
+                        owner_username=user.userName,
+                        domain=domain,
+                        website_id=website.pk,
+                        app_name=app_name,
+                        app_root=app_root,
+                        git_url=form.cleaned_data["git_url"],
+                        branch=form.cleaned_data["branch"],
+                        port=port,
+                        package_manager=form.cleaned_data["package_manager"],
+                        install_command=form.cleaned_data["install_command"],
+                        build_command=form.cleaned_data["build_command"],
+                        start_command=form.cleaned_data["start_command"],
+                        pm2_name=deploy.make_pm2_name(user.userName, domain, app_name),
+                    )
+                except DatabaseError:
+                    logger.exception("nodeManager create failed while writing the application record")
+                    form.add_error(None, "Application could not be created. Check that nodeManager migrations are applied.")
+                    messages.error(request, "Application was not created. Check that nodeManager migrations are applied.")
                 except Exception:
-                    messages.error(request, "Application record was created, but deployment failed. Review the application detail and logs.")
+                    logger.exception("nodeManager create failed before deployment")
+                    form.add_error(None, "Application could not be created. Review the CyberPanel error logs.")
+                    messages.error(request, "Application was not created.")
+                else:
+                    try:
+                        deploy.deploy_app(app, env_text=form.cleaned_data["environment"])
+                    except Exception:
+                        messages.error(request, "Application record was created, but deployment failed. Review the application detail and logs.")
+                        return redirect("nodeManager:detail", public_id=app.public_id)
+                    messages.success(request, "Node.js application created and deployed.")
                     return redirect("nodeManager:detail", public_id=app.public_id)
         else:
             messages.error(request, "Application was not created. Fix the highlighted fields and submit again.")
