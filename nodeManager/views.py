@@ -72,7 +72,7 @@ def app_form_initial(app, include_environment=False):
 
 
 def render_cp(request, template, context=None):
-    proc = httpProc(request, template, context or {}, "admin")
+    proc = httpProc(request, template, context or {})
     return proc.render()
 
 
