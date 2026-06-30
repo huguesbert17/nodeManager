@@ -8,6 +8,7 @@ HELPER_SETUP_ERROR = (
     "nodeManager run-as-user helper is not installed at %s. "
     "Run sudo bash post_install from the installed plugin directory and restart lscpd."
 ) % RUN_AS_HELPER
+SUBPROCESS_TEXT_KWARGS = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
 
 def _run_as_user(linux_user, args, cwd=None, env=None, timeout=300):
@@ -21,7 +22,7 @@ def _run_as_user(linux_user, args, cwd=None, env=None, timeout=300):
             env=os.environ.copy(),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True,
+            **SUBPROCESS_TEXT_KWARGS,
             timeout=timeout,
         )
         return result.returncode, result.stdout

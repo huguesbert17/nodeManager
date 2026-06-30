@@ -6,6 +6,7 @@ from datetime import datetime
 
 MARKER_START = "# nodeManager:start:%s"
 MARKER_END = "# nodeManager:end:%s"
+SUBPROCESS_TEXT_KWARGS = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
 
 def get_vhost_config_path(domain):
@@ -88,7 +89,7 @@ def reload_litespeed():
     last_output = ""
     for command in candidates:
         try:
-            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=120)
+            result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120, **SUBPROCESS_TEXT_KWARGS)
         except OSError as exc:
             last_output = str(exc)
             continue

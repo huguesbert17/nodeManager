@@ -16,6 +16,7 @@ HELPER_SETUP_ERROR = (
     "nodeManager run-as-user helper is not installed at %s. "
     "Run sudo bash post_install from the installed plugin directory and restart lscpd."
 ) % RUN_AS_HELPER
+SUBPROCESS_TEXT_KWARGS = {"text": True, "encoding": "utf-8", "errors": "replace"}
 
 
 def make_pm2_name(owner_username, domain, app_name):
@@ -43,7 +44,7 @@ def _run(command, linux_user, cwd=None, timeout=600):
             sudo_command,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True,
+            **SUBPROCESS_TEXT_KWARGS,
             timeout=timeout,
         )
         return result.returncode, result.stdout
@@ -77,7 +78,7 @@ def _write_env_file(app, env_text, linux_user):
         input="\n".join(lines) + "\n",
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True,
+        **SUBPROCESS_TEXT_KWARGS,
         timeout=60,
     )
     if proc.returncode != 0:
