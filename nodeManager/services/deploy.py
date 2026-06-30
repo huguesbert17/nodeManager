@@ -129,7 +129,8 @@ def run_package_command(app, linux_user, command, status):
     code, output = _run(shlex.split(command), linux_user, cwd=app.app_root, timeout=900)
     append_deploy_log(app, "$ %s\n%s" % (command, output))
     if code != 0:
-        raise RuntimeError("Command failed: %s" % command)
+        detail = output.strip().splitlines()[-1] if output.strip() else "no command output"
+        raise RuntimeError("Command failed: %s: %s" % (command, detail))
 
 
 def deploy_app(app, env_text=""):

@@ -32,4 +32,9 @@ if [ "$CWD" != "-" ]; then
   cd "$REAL_CWD"
 fi
 
-exec sudo -n -u "$RUN_AS" "$@"
+NODE_MANAGER_PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin"
+if [ -n "${PATH:-}" ]; then
+  NODE_MANAGER_PATH="$PATH:$NODE_MANAGER_PATH"
+fi
+
+exec sudo -n -u "$RUN_AS" env PATH="$NODE_MANAGER_PATH" "$@"
