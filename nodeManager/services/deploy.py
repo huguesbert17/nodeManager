@@ -51,6 +51,11 @@ def _path_exists(linux_user, path):
     return code == 0
 
 
+def _can_enter_directory(linux_user, path):
+    code, _output = _run(["pwd"], linux_user, cwd=path, timeout=30)
+    return code == 0
+
+
 def _write_env_file(app, env_text, linux_user):
     if not env_text.strip():
         return ""
@@ -78,10 +83,14 @@ def _write_env_file(app, env_text, linux_user):
 
 
 def prepare_app_directory(app, linux_user):
+    if _can_enter_directory(linux_user, app.app_root):
+        append_deploy_log(app, "Using existing application directory: %s" % app.app_root)
+        return
     code, output = _run(["mkdir", "-p", app.app_root], linux_user, timeout=120)
     append_deploy_log(app, "$ mkdir -p %s\n%s" % (app.app_root, output))
     if code != 0:
-        raise RuntimeError("Unable to create application directory as %s." % linux_user)
+        detail = output.strip() or "no command output"
+        raise RuntimeError("Unable to create application directory as %s: %s" % (linux_user, detail))
     _run(["chmod", "750", app.app_root], linux_user, timeout=60)
 
 
