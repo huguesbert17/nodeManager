@@ -50,8 +50,18 @@ def command_to_pm2_args(command):
     return executable, args
 
 
+def _absolute_node_entry(app, executable, command_args):
+    if executable != "node" or not command_args:
+        return executable, command_args
+    entry = command_args[0]
+    if entry.startswith("/") or entry.startswith("-"):
+        return executable, command_args
+    return executable, [os.path.join(app.app_root, entry)] + command_args[1:]
+
+
 def start_app(app, linux_user):
     executable, command_args = command_to_pm2_args(app.start_command)
+    executable, command_args = _absolute_node_entry(app, executable, command_args)
     executable, command_args = _low_priority_process_args(linux_user, executable, command_args)
     env = {"PORT": str(app.port), "HOST": "127.0.0.1", "HOSTNAME": "127.0.0.1", "NODE_ENV": "production"}
     delete_app(app, linux_user)
