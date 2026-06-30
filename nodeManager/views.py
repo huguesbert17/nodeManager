@@ -53,8 +53,8 @@ def relative_app_root(app):
     return ""
 
 
-def app_form_initial(app):
-    return {
+def app_form_initial(app, include_environment=False):
+    initial = {
         "domain": app.domain,
         "app_name": app.app_name,
         "app_root": relative_app_root(app),
@@ -65,6 +65,9 @@ def app_form_initial(app):
         "build_command": app.build_command,
         "start_command": app.start_command,
     }
+    if include_environment:
+        initial["environment"] = deploy.read_env_file(app)
+    return initial
 
 
 def render_cp(request, template, context=None):
@@ -179,7 +182,7 @@ def edit(request, public_id):
         domains=domains,
         settings_obj=settings_obj,
         lock_identity=True,
-        initial=app_form_initial(app),
+        initial=app_form_initial(app, include_environment=True),
     )
     if request.method == "POST":
         if form.is_valid():

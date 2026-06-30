@@ -96,6 +96,18 @@ def write_env_file(app, env_text):
     return _write_env_file(app, env_text, linux_user)
 
 
+def read_env_file(app):
+    path = app.env_file_path or os.path.join(app.app_root, ".env")
+    if not path.startswith(app.app_root + os.sep):
+        return ""
+    website = get_primary_website(app.domain)
+    linux_user = get_linux_user(website)
+    code, output = _run(["cat", path], linux_user, timeout=60)
+    if code != 0:
+        return ""
+    return output
+
+
 def prepare_app_directory(app, linux_user):
     if _can_enter_directory(linux_user, app.app_root):
         append_deploy_log(app, "Using existing application directory: %s" % app.app_root)
