@@ -1,7 +1,7 @@
 import logging
 
 from django.contrib import messages
-from django.db import DatabaseError
+from django.db import DatabaseError, IntegrityError
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
@@ -68,6 +68,10 @@ def create(request):
                 try:
                     website = get_primary_website(domain)
                     app_name = form.cleaned_data["app_name"]
+                    existing_app = NodeApp.objects.filter(owner_user_id=user.pk, domain=domain, app_name=app_name).first()
+                    if existing_app:
+                        messages.error(request, "A Node.js application with this name already exists for this domain.")
+                        return redirect("nodeManager:detail", public_id=existing_app.public_id)
                     app_root = deploy.build_app_root(website, domain, app_name, form.cleaned_data["app_root"])
                     port = reserve_port(settings_obj)
                     app = NodeApp.objects.create(
@@ -86,6 +90,10 @@ def create(request):
                         start_command=form.cleaned_data["start_command"],
                         pm2_name=deploy.make_pm2_name(user.userName, domain, app_name),
                     )
+                except IntegrityError:
+                    logger.exception("nodeManager create hit a database uniqueness constraint")
+                    form.add_error(None, "Application could not be created because a matching app record or port already exists.")
+                    messages.error(request, "Application was not created because a matching app record or port already exists.")
                 except DatabaseError:
                     logger.exception("nodeManager create failed while writing the application record")
                     form.add_error(None, "Application could not be created. Check that nodeManager migrations are applied.")
