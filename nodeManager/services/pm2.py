@@ -1,3 +1,4 @@
+import json
 import os
 import shlex
 import subprocess
@@ -85,7 +86,21 @@ def restart_app(app, linux_user):
 
 
 def delete_app(app, linux_user):
-    return _run_as_user(linux_user, ["pm2", "delete", app.pm2_name], timeout=60)
+    code, output = _run_as_user(linux_user, ["pm2", "jlist"], timeout=60)
+    if code != 0:
+        return _run_as_user(linux_user, ["pm2", "delete", app.pm2_name], timeout=60)
+    try:
+        processes = json.loads(output or "[]")
+    except ValueError:
+        return _run_as_user(linux_user, ["pm2", "delete", app.pm2_name], timeout=60)
+    pm_ids = [
+        str(process.get("pm_id"))
+        for process in processes
+        if process.get("name") == app.pm2_name and process.get("pm_id") is not None
+    ]
+    if not pm_ids:
+        return 0, "No PM2 process named %s exists." % app.pm2_name
+    return _run_as_user(linux_user, ["pm2", "delete"] + pm_ids, timeout=120)
 
 
 def get_status(app, linux_user):
