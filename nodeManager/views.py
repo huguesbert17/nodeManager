@@ -29,6 +29,23 @@ from .services.users import get_linux_user, get_primary_website
 logger = logging.getLogger(__name__)
 
 
+def _deleted_value(value, suffix, max_length):
+    suffix = "-deleted-%s" % suffix
+    return "%s%s" % (value[: max_length - len(suffix)], suffix)
+
+
+def release_deleted_app_constraints(app):
+    app.app_name = _deleted_value(app.app_name, app.pk, 64)
+    app.pm2_name = _deleted_value(app.pm2_name, app.pk, 180)
+    app.port = -abs(app.pk)
+
+
+def release_legacy_deleted_app_constraints():
+    for app in NodeApp.objects.filter(status=NodeApp.STATUS_DELETED, port__gt=0):
+        release_deleted_app_constraints(app)
+        app.save(update_fields=["app_name", "pm2_name", "port", "updated_at"])
+
+
 def render_cp(request, template, context=None):
     proc = httpProc(request, template, context or {}, "admin")
     return proc.render()
@@ -60,6 +77,7 @@ def create(request):
             domain = form.cleaned_data["domain"]
             if not can_manage_domain(user, domain):
                 return HttpResponseForbidden("You cannot manage this domain.")
+            release_legacy_deleted_app_constraints()
             active_count = NodeApp.objects.exclude(status=NodeApp.STATUS_DELETED).filter(owner_user_id=user.pk).count()
             if not is_admin(user) and active_count >= settings_obj.max_apps_per_user:
                 form.add_error(None, "Maximum Node.js applications reached.")
@@ -68,7 +86,7 @@ def create(request):
                 try:
                     website = get_primary_website(domain)
                     app_name = form.cleaned_data["app_name"]
-                    existing_app = NodeApp.objects.filter(owner_user_id=user.pk, domain=domain, app_name=app_name).first()
+                    existing_app = NodeApp.objects.exclude(status=NodeApp.STATUS_DELETED).filter(owner_user_id=user.pk, domain=domain, app_name=app_name).first()
                     if existing_app:
                         messages.error(request, "A Node.js application with this name already exists for this domain.")
                         return redirect("nodeManager:detail", public_id=existing_app.public_id)
@@ -277,7 +295,8 @@ def delete(request, public_id):
         openlitespeed.reload_litespeed()
         app.status = NodeApp.STATUS_DELETED
         app.last_error = ""
-        app.save(update_fields=["status", "last_error", "updated_at"])
+        release_deleted_app_constraints(app)
+        app.save(update_fields=["status", "last_error", "app_name", "pm2_name", "port", "updated_at"])
         messages.success(request, "Application removed from Node Manager. Files were left on disk.")
         return redirect("nodeManager:index")
     except Exception as exc:
