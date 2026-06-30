@@ -277,24 +277,39 @@ def _action_redirect(app):
     return redirect("nodeManager:detail", public_id=app.public_id)
 
 
+def _short_error(value):
+    value = str(value or "").strip()
+    if len(value) > 4000:
+        return value[-4000:]
+    return value
+
+
 def _save_action_result(request, app, action_name, success_status, failure_error, code, output):
-    append_deploy_log(app, output)
-    if code == 0:
-        app.status = success_status
-        app.last_error = ""
-        messages.success(request, "Application %s." % action_name)
-    else:
-        app.status = NodeApp.STATUS_ERROR
-        app.last_error = failure_error
-        messages.error(request, failure_error)
-    app.save(update_fields=["status", "last_error", "deploy_log", "updated_at"])
+    try:
+        append_deploy_log(app, output)
+        if code == 0:
+            app.status = success_status
+            app.last_error = ""
+            messages.success(request, "Application %s." % action_name)
+        else:
+            app.status = NodeApp.STATUS_ERROR
+            detail = output.strip().splitlines()[-1] if output and output.strip() else failure_error
+            app.last_error = _short_error("%s: %s" % (failure_error, detail))
+            messages.error(request, failure_error)
+        app.save(update_fields=["status", "last_error", "updated_at"])
+    except Exception:
+        logger.exception("nodeManager failed to persist PM2 action result")
+        messages.error(request, "%s Review the CyberPanel error logs." % failure_error)
 
 
 def _save_action_exception(request, app, message, exc):
-    app.status = NodeApp.STATUS_ERROR
-    app.last_error = str(exc)
-    append_deploy_log(app, "%s\n%s" % (message, exc))
-    app.save(update_fields=["status", "last_error", "deploy_log", "updated_at"])
+    try:
+        app.status = NodeApp.STATUS_ERROR
+        app.last_error = _short_error(exc)
+        append_deploy_log(app, "%s\n%s" % (message, exc))
+        app.save(update_fields=["status", "last_error", "updated_at"])
+    except Exception:
+        logger.exception("nodeManager failed to persist PM2 action exception")
     messages.error(request, "%s Review the application logs." % message)
 
 
