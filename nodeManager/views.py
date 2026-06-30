@@ -64,6 +64,7 @@ def app_form_initial(app, include_environment=False):
         "install_command": app.install_command,
         "build_command": app.build_command,
         "start_command": app.start_command,
+        "memory_limit": app.memory_limit,
     }
     if include_environment:
         initial["environment"] = deploy.read_env_file(app)
@@ -130,6 +131,7 @@ def create(request):
                         install_command=form.cleaned_data["install_command"],
                         build_command=form.cleaned_data["build_command"],
                         start_command=form.cleaned_data["start_command"],
+                        memory_limit=form.cleaned_data["memory_limit"],
                         pm2_name=deploy.make_pm2_name(user.userName, domain, app_name),
                     )
                 except IntegrityError:
@@ -195,6 +197,7 @@ def edit(request, public_id):
                 app.install_command = form.cleaned_data["install_command"]
                 app.build_command = form.cleaned_data["build_command"]
                 app.start_command = form.cleaned_data["start_command"]
+                app.memory_limit = form.cleaned_data["memory_limit"]
                 app.save(
                     update_fields=[
                         "app_root",
@@ -204,6 +207,7 @@ def edit(request, public_id):
                         "install_command",
                         "build_command",
                         "start_command",
+                        "memory_limit",
                         "updated_at",
                     ]
                 )

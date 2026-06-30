@@ -22,6 +22,7 @@
       <dt>Install</dt><dd><code>{{ app.install_command }}</code></dd>
       <dt>Build</dt><dd><code>{{ app.build_command|default:"-" }}</code></dd>
       <dt>Start</dt><dd><code>{{ app.start_command }}</code></dd>
+      <dt>Memory limit</dt><dd><code>{{ app.memory_limit|default:"-" }}</code></dd>
       {% if app.last_error %}<dt>Last error</dt><dd class="nm-error">{{ app.last_error }}</dd>{% endif %}
     </dl>
     <div class="nm-actions nm-section-actions">

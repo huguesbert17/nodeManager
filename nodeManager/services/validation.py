@@ -7,6 +7,7 @@ DOMAIN_RE = re.compile(r"^(?=.{1,255}$)([a-zA-Z0-9][a-zA-Z0-9-]{0,62}\.)+[a-zA-Z
 ENV_KEY_RE = re.compile(r"^[A-Z_][A-Z0-9_]*$")
 BRANCH_RE = re.compile(r"^[A-Za-z0-9._/@-]{1,100}$")
 RELATIVE_APP_ROOT_RE = re.compile(r"^[A-Za-z0-9._/-]{1,255}$")
+MEMORY_LIMIT_RE = re.compile(r"^[1-9][0-9]{1,5}[KMG]$")
 
 DANGEROUS_TOKENS = (
     ";",
@@ -77,6 +78,11 @@ def validate_command(value, allowed_commands):
             raise forms.ValidationError("Command contains a blocked token: %s" % token)
     if normalized not in allowed_commands:
         raise forms.ValidationError("Command is not allowed by Node Manager settings.")
+
+
+def validate_memory_limit(value):
+    if value and not MEMORY_LIMIT_RE.match(value):
+        raise forms.ValidationError("Use a value like 512M, 1G, or 700M.")
 
 
 def parse_env_text(value):

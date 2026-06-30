@@ -6,6 +6,7 @@ from .services.validation import (
     validate_command,
     validate_env_text,
     validate_git_url,
+    validate_memory_limit,
     validate_relative_app_root,
 )
 
@@ -25,6 +26,13 @@ class NodeAppCreateForm(forms.Form):
     install_command = forms.CharField(max_length=120, initial="npm install")
     build_command = forms.CharField(max_length=120, required=False)
     start_command = forms.CharField(max_length=160, initial="npm start")
+    memory_limit = forms.CharField(
+        max_length=20,
+        required=False,
+        initial="700M",
+        label="Memory restart limit",
+        help_text="PM2 restarts the app if it exceeds this memory, for example 512M, 700M, or 1G.",
+    )
     environment = forms.CharField(required=False, widget=forms.Textarea)
     env_file = forms.FileField(
         required=False,
@@ -80,6 +88,11 @@ class NodeAppCreateForm(forms.Form):
     def clean_start_command(self):
         value = self.cleaned_data["start_command"].strip()
         validate_command(value, self.settings_obj.list_value("allowed_start_commands"))
+        return value
+
+    def clean_memory_limit(self):
+        value = (self.cleaned_data.get("memory_limit") or "").strip().upper()
+        validate_memory_limit(value)
         return value
 
     def clean_environment(self):

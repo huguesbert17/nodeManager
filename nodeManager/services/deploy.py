@@ -56,6 +56,20 @@ def _path_exists(linux_user, path):
     return code == 0
 
 
+def _command_exists(linux_user, command):
+    code, _output = _run(["sh", "-lc", "command -v %s" % shlex.quote(command)], linux_user, timeout=30)
+    return code == 0
+
+
+def _low_priority_command(command, linux_user):
+    wrapped = list(command)
+    if _command_exists(linux_user, "nice"):
+        wrapped = ["nice", "-n", "10"] + wrapped
+    if _command_exists(linux_user, "ionice"):
+        wrapped = ["ionice", "-c", "2", "-n", "7"] + wrapped
+    return wrapped
+
+
 def _can_enter_directory(linux_user, path):
     code, _output = _run(["pwd"], linux_user, cwd=path, timeout=30)
     return code == 0
@@ -139,7 +153,7 @@ def run_package_command(app, linux_user, command, status):
         return
     app.status = status
     app.save(update_fields=["status", "updated_at"])
-    code, output = _run(shlex.split(command), linux_user, cwd=app.app_root, timeout=900)
+    code, output = _run(_low_priority_command(shlex.split(command), linux_user), linux_user, cwd=app.app_root, timeout=900)
     append_deploy_log(app, "$ %s\n%s" % (command, output))
     if code != 0:
         detail = sanitize_log_text(output).strip().splitlines()[-1] if output and output.strip() else "no command output"

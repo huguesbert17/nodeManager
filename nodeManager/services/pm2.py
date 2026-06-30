@@ -42,6 +42,8 @@ def start_app(app, linux_user):
     executable, command_args = command_to_pm2_args(app.start_command)
     env = {"PORT": str(app.port), "HOST": "127.0.0.1", "NODE_ENV": "production"}
     args = ["pm2", "start", executable, "--name", app.pm2_name, "--cwd", app.app_root]
+    if app.memory_limit:
+        args += ["--max-memory-restart", app.memory_limit]
     if command_args:
         args += ["--"] + command_args
     return _run_as_user(linux_user, args, cwd=app.app_root, env=env, timeout=120)

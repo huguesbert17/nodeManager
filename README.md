@@ -99,6 +99,8 @@ Expected migration state:
 nodeManager
  [X] 0001_initial
  [X] 0002_nodeapp_public_id
+ [X] 0003_nodeapp_memory_limit
+ [X] 0004_update_default_start_commands
 ```
 
 Restart CyberPanel:

@@ -38,6 +38,7 @@ class NodeApp(models.Model):
     install_command = models.CharField(max_length=120, default="npm install")
     build_command = models.CharField(max_length=120, blank=True, default="")
     start_command = models.CharField(max_length=160, default="npm start")
+    memory_limit = models.CharField(max_length=20, blank=True, default="700M")
     pm2_name = models.CharField(max_length=180, unique=True)
     env_file_path = models.CharField(max_length=500, blank=True, default="")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_CREATED, db_index=True)
@@ -64,7 +65,11 @@ class NodeManagerSettings(models.Model):
     allowed_install_commands = models.TextField(default="npm install\nnpm ci\nyarn install\npnpm install")
     allowed_build_commands = models.TextField(default="npm run build\nyarn build\npnpm build")
     allowed_start_commands = models.TextField(
-        default="npm start\nnpm run start\nyarn start\npnpm start\nnode server.js\nnode dist/main.js\nnode build/bin/server.js"
+        default=(
+            "npm start\nnpm run start\nyarn start\npnpm start\n"
+            "node server.js\nnode --max-old-space-size=512 server.js\n"
+            "node dist/main.js\nnode build/bin/server.js\nnode .next/standalone/server.js"
+        )
     )
     allow_git_deploy = models.BooleanField(default=True)
     allow_env_editor = models.BooleanField(default=True)
