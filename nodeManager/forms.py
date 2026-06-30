@@ -25,7 +25,7 @@ class NodeAppCreateForm(forms.Form):
     package_manager = forms.ChoiceField(choices=())
     install_command = forms.CharField(max_length=120, initial="npm install")
     build_command = forms.CharField(max_length=120, required=False)
-    start_command = forms.CharField(max_length=160, initial="npm start")
+    start_command = forms.CharField(max_length=160, initial="node node_modules/next/dist/bin/next start")
     memory_limit = forms.CharField(
         max_length=20,
         required=False,

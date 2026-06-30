@@ -101,6 +101,7 @@ nodeManager
  [X] 0002_nodeapp_public_id
  [X] 0003_nodeapp_memory_limit
  [X] 0004_update_default_start_commands
+ [X] 0005_add_direct_next_start_command
 ```
 
 Restart CyberPanel:

@@ -116,6 +116,7 @@
     [X] 0002_nodeapp_public_id
     [X] 0003_nodeapp_memory_limit
     [X] 0004_update_default_start_commands
+    [X] 0005_add_direct_next_start_command
    ```
 
 If plugin migrations are unavailable in the target CyberPanel installation, create the two tables from `nodeManager/migrations/0001_initial.py` manually or run `manage.py sqlmigrate nodeManager 0001` on a compatible staging server and apply the generated SQL.

@@ -67,6 +67,7 @@ class NodeManagerSettings(models.Model):
     allowed_start_commands = models.TextField(
         default=(
             "npm start\nnpm run start\nyarn start\npnpm start\n"
+            "node node_modules/next/dist/bin/next start\n"
             "node server.js\nnode --max-old-space-size=512 server.js\n"
             "node dist/main.js\nnode build/bin/server.js\nnode .next/standalone/server.js"
         )

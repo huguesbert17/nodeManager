@@ -53,7 +53,7 @@ def command_to_pm2_args(command):
 def start_app(app, linux_user):
     executable, command_args = command_to_pm2_args(app.start_command)
     executable, command_args = _low_priority_process_args(linux_user, executable, command_args)
-    env = {"PORT": str(app.port), "HOST": "127.0.0.1", "NODE_ENV": "production"}
+    env = {"PORT": str(app.port), "HOST": "127.0.0.1", "HOSTNAME": "127.0.0.1", "NODE_ENV": "production"}
     delete_app(app, linux_user)
     args = [
         "pm2",
