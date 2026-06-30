@@ -7,8 +7,8 @@
     <p>{{ app.domain }} · {{ app.app_name }}</p>
   </div>
   <div class="nm-actions">
-    <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:detail' app.pk %}">Back</a>
-    <a class="nm-btn" href="{% url 'nodeManager:logs' app.pk %}">Refresh</a>
+    <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:detail' app.public_id %}">Back</a>
+    <a class="nm-btn" href="{% url 'nodeManager:logs' app.public_id %}">Refresh</a>
   </div>
 </div>
 

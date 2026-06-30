@@ -7,7 +7,7 @@ from plogical.httpProc import httpProc
 from .forms import NodeAppCreateForm, NodeManagerSettingsForm
 from .models import NodeApp, NodeManagerSettings
 from .services import deploy, openlitespeed, pm2
-from .services.logs import get_pm2_logs
+from .services.logs import append_deploy_log, get_pm2_logs
 from .services.permissions import (
     can_manage_domain,
     can_manage_node_app,
@@ -82,22 +82,31 @@ def create(request):
                 try:
                     deploy.deploy_app(app, env_text=form.cleaned_data["environment"])
                     messages.success(request, "Node.js application created and deployed.")
-                    return redirect("nodeManager:detail", app_id=app.pk)
+                    return redirect("nodeManager:detail", public_id=app.public_id)
                 except Exception:
                     messages.error(request, "Application record was created, but deployment failed. Review the application detail and logs.")
-                    return redirect("nodeManager:detail", app_id=app.pk)
+                    return redirect("nodeManager:detail", public_id=app.public_id)
         else:
             messages.error(request, "Application was not created. Fix the highlighted fields and submit again.")
     return render_cp(request, "nodeManager/create.html", {"form": form})
 
 
 @cyberpanel_login_required
-def detail(request, app_id):
+def detail(request, public_id):
+    user = get_current_cyberpanel_user(request)
+    app = get_object_or_404(NodeApp, public_id=public_id)
+    if not can_view_node_app(user, app):
+        return HttpResponseForbidden("You cannot view this application.")
+    return render_cp(request, "nodeManager/detail.html", {"app": app, "is_admin": is_admin(user)})
+
+
+@cyberpanel_login_required
+def legacy_detail_redirect(request, app_id):
     user = get_current_cyberpanel_user(request)
     app = get_object_or_404(NodeApp, pk=app_id)
     if not can_view_node_app(user, app):
         return HttpResponseForbidden("You cannot view this application.")
-    return render_cp(request, "nodeManager/detail.html", {"app": app, "is_admin": is_admin(user)})
+    return redirect("nodeManager:detail", public_id=app.public_id)
 
 
 @cyberpanel_admin_required
@@ -126,77 +135,105 @@ def settings(request):
     return render_cp(request, "nodeManager/settings.html", {"form": form})
 
 
-def _get_action_app(request, app_id):
+def _get_action_app(request, public_id):
     user = get_current_cyberpanel_user(request)
-    app = get_object_or_404(NodeApp, pk=app_id)
+    app = get_object_or_404(NodeApp, public_id=public_id)
     if not can_manage_node_app(user, app):
         return None, HttpResponseForbidden("You cannot manage this application.")
     return app, None
 
 
+def _action_redirect(app):
+    return redirect("nodeManager:detail", public_id=app.public_id)
+
+
+def _save_action_result(request, app, action_name, success_status, failure_error, code, output):
+    append_deploy_log(app, output)
+    if code == 0:
+        app.status = success_status
+        app.last_error = ""
+        messages.success(request, "Application %s." % action_name)
+    else:
+        app.status = NodeApp.STATUS_ERROR
+        app.last_error = failure_error
+        messages.error(request, failure_error)
+    app.save(update_fields=["status", "last_error", "deploy_log", "updated_at"])
+
+
+def _save_action_exception(request, app, message, exc):
+    app.status = NodeApp.STATUS_ERROR
+    app.last_error = str(exc)
+    append_deploy_log(app, "%s\n%s" % (message, exc))
+    app.save(update_fields=["status", "last_error", "deploy_log", "updated_at"])
+    messages.error(request, "%s Review the application logs." % message)
+
+
 @cyberpanel_login_required
 @require_POST
-def start(request, app_id):
-    app, error = _get_action_app(request, app_id)
+def start(request, public_id):
+    app, error = _get_action_app(request, public_id)
     if error:
         return error
-    website = get_primary_website(app.domain)
-    code, output = pm2.start_app(app, get_linux_user(website))
-    app.deploy_log = ("%s\n%s" % (app.deploy_log or "", output)).strip()[-60000:]
-    app.status = NodeApp.STATUS_RUNNING if code == 0 else NodeApp.STATUS_ERROR
-    app.last_error = "" if code == 0 else "PM2 start failed."
-    app.save()
-    return redirect("nodeManager:detail", app_id=app.pk)
+    try:
+        website = get_primary_website(app.domain)
+        code, output = pm2.start_app(app, get_linux_user(website))
+        _save_action_result(request, app, "started", NodeApp.STATUS_RUNNING, "PM2 start failed.", code, output)
+    except Exception as exc:
+        _save_action_exception(request, app, "PM2 start failed.", exc)
+    return _action_redirect(app)
 
 
 @cyberpanel_login_required
 @require_POST
-def stop(request, app_id):
-    app, error = _get_action_app(request, app_id)
+def stop(request, public_id):
+    app, error = _get_action_app(request, public_id)
     if error:
         return error
-    website = get_primary_website(app.domain)
-    code, output = pm2.stop_app(app, get_linux_user(website))
-    app.deploy_log = ("%s\n%s" % (app.deploy_log or "", output)).strip()[-60000:]
-    app.status = NodeApp.STATUS_STOPPED if code == 0 else NodeApp.STATUS_ERROR
-    app.last_error = "" if code == 0 else "PM2 stop failed."
-    app.save()
-    return redirect("nodeManager:detail", app_id=app.pk)
+    try:
+        website = get_primary_website(app.domain)
+        code, output = pm2.stop_app(app, get_linux_user(website))
+        _save_action_result(request, app, "stopped", NodeApp.STATUS_STOPPED, "PM2 stop failed.", code, output)
+    except Exception as exc:
+        _save_action_exception(request, app, "PM2 stop failed.", exc)
+    return _action_redirect(app)
 
 
 @cyberpanel_login_required
 @require_POST
-def restart(request, app_id):
-    app, error = _get_action_app(request, app_id)
+def restart(request, public_id):
+    app, error = _get_action_app(request, public_id)
     if error:
         return error
-    website = get_primary_website(app.domain)
-    code, output = pm2.restart_app(app, get_linux_user(website))
-    app.deploy_log = ("%s\n%s" % (app.deploy_log or "", output)).strip()[-60000:]
-    app.status = NodeApp.STATUS_RUNNING if code == 0 else NodeApp.STATUS_ERROR
-    app.last_error = "" if code == 0 else "PM2 restart failed."
-    app.save()
-    return redirect("nodeManager:detail", app_id=app.pk)
+    try:
+        website = get_primary_website(app.domain)
+        code, output = pm2.restart_app(app, get_linux_user(website))
+        _save_action_result(request, app, "restarted", NodeApp.STATUS_RUNNING, "PM2 restart failed.", code, output)
+    except Exception as exc:
+        _save_action_exception(request, app, "PM2 restart failed.", exc)
+    return _action_redirect(app)
 
 
 @cyberpanel_login_required
 @require_POST
-def redeploy(request, app_id):
-    app, error = _get_action_app(request, app_id)
+def redeploy(request, public_id):
+    app, error = _get_action_app(request, public_id)
     if error:
         return error
     try:
         deploy.deploy_app(app)
         messages.success(request, "Application redeployed.")
-    except Exception:
-        messages.error(request, "Redeploy failed.")
-    return redirect("nodeManager:detail", app_id=app.pk)
+    except Exception as exc:
+        messages.error(request, "Redeploy failed. Review the application logs.")
+        if not app.last_error:
+            app.last_error = str(exc)
+            app.save(update_fields=["last_error", "updated_at"])
+    return _action_redirect(app)
 
 
 @cyberpanel_login_required
-def logs(request, app_id):
+def logs(request, public_id):
     user = get_current_cyberpanel_user(request)
-    app = get_object_or_404(NodeApp, pk=app_id)
+    app = get_object_or_404(NodeApp, public_id=public_id)
     if not can_view_logs(user, app):
         return HttpResponseForbidden("You cannot view these logs.")
     pm2_logs = get_pm2_logs(app, lines=200)
@@ -205,15 +242,20 @@ def logs(request, app_id):
 
 @cyberpanel_login_required
 @require_POST
-def delete(request, app_id):
-    app, error = _get_action_app(request, app_id)
+def delete(request, public_id):
+    app, error = _get_action_app(request, public_id)
     if error:
         return error
-    website = get_primary_website(app.domain)
-    pm2.delete_app(app, get_linux_user(website))
-    openlitespeed.remove_reverse_proxy(app)
-    openlitespeed.reload_litespeed()
-    app.status = NodeApp.STATUS_DELETED
-    app.save(update_fields=["status", "updated_at"])
-    messages.success(request, "Application removed from Node Manager. Files were left on disk.")
-    return redirect("nodeManager:index")
+    try:
+        website = get_primary_website(app.domain)
+        pm2.delete_app(app, get_linux_user(website))
+        openlitespeed.remove_reverse_proxy(app)
+        openlitespeed.reload_litespeed()
+        app.status = NodeApp.STATUS_DELETED
+        app.last_error = ""
+        app.save(update_fields=["status", "last_error", "updated_at"])
+        messages.success(request, "Application removed from Node Manager. Files were left on disk.")
+        return redirect("nodeManager:index")
+    except Exception as exc:
+        _save_action_exception(request, app, "Application delete failed.", exc)
+        return _action_redirect(app)

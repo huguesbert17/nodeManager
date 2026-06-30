@@ -29,12 +29,12 @@
   <section class="nm-panel">
     <h2>Actions</h2>
     <div class="nm-button-grid">
-      <form method="post" action="{% url 'nodeManager:start' app.pk %}">{% csrf_token %}<button class="nm-btn" type="submit">Start</button></form>
-      <form method="post" action="{% url 'nodeManager:stop' app.pk %}">{% csrf_token %}<button class="nm-btn nm-btn-secondary" type="submit">Stop</button></form>
-      <form method="post" action="{% url 'nodeManager:restart' app.pk %}">{% csrf_token %}<button class="nm-btn" type="submit">Restart</button></form>
-      <form method="post" action="{% url 'nodeManager:redeploy' app.pk %}">{% csrf_token %}<button class="nm-btn" type="submit">Redeploy</button></form>
-      <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:logs' app.pk %}">Logs</a>
-      <form method="post" action="{% url 'nodeManager:delete' app.pk %}" data-confirm="Delete this Node Manager record and PM2 process? Files remain on disk.">
+      <form method="post" action="{% url 'nodeManager:start' app.public_id %}">{% csrf_token %}<button class="nm-btn" type="submit">Start</button></form>
+      <form method="post" action="{% url 'nodeManager:stop' app.public_id %}">{% csrf_token %}<button class="nm-btn nm-btn-secondary" type="submit">Stop</button></form>
+      <form method="post" action="{% url 'nodeManager:restart' app.public_id %}">{% csrf_token %}<button class="nm-btn" type="submit">Restart</button></form>
+      <form method="post" action="{% url 'nodeManager:redeploy' app.public_id %}">{% csrf_token %}<button class="nm-btn" type="submit">Redeploy</button></form>
+      <a class="nm-btn nm-btn-secondary" href="{% url 'nodeManager:logs' app.public_id %}">Logs</a>
+      <form method="post" action="{% url 'nodeManager:delete' app.public_id %}" data-confirm="Delete this Node Manager record and PM2 process? Files remain on disk.">
         {% csrf_token %}<button class="nm-btn nm-btn-danger" type="submit">Delete</button>
       </form>
     </div>

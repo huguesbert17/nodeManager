@@ -46,20 +46,33 @@ def _write_env_file(app, env_text, linux_user):
         return ""
     env = parse_env_text(env_text)
     path = os.path.join(app.app_root, ".env")
-    with open(path, "w") as handle:
-        for key, value in sorted(env.items()):
-            escaped = value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
-            handle.write('%s="%s"\n' % (key, escaped))
-    os.chmod(path, 0o600)
-    subprocess.run(["sudo", "chown", "%s:%s" % (linux_user, linux_user), path], check=False)
+    lines = []
+    for key, value in sorted(env.items()):
+        escaped = value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
+        lines.append('%s="%s"' % (key, escaped))
+    proc = subprocess.run(
+        ["sudo", "-u", linux_user, "tee", path],
+        input="\n".join(lines) + "\n",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        timeout=60,
+    )
+    if proc.returncode != 0:
+        append_deploy_log(app, "Unable to write .env file.")
+        raise RuntimeError("Unable to write environment file.")
+    _run(["chmod", "600", ".env"], linux_user, cwd=app.app_root, timeout=60)
     app.env_file_path = path
     app.save(update_fields=["env_file_path", "updated_at"])
     return path
 
 
 def prepare_app_directory(app, linux_user):
-    os.makedirs(app.app_root, mode=0o750, exist_ok=True)
-    subprocess.run(["sudo", "chown", "-R", "%s:%s" % (linux_user, linux_user), app.app_root], check=False)
+    code, output = _run(["mkdir", "-p", app.app_root], linux_user, timeout=120)
+    append_deploy_log(app, "$ mkdir -p %s\n%s" % (app.app_root, output))
+    if code != 0:
+        raise RuntimeError("Unable to create application directory as %s." % linux_user)
+    _run(["chmod", "750", app.app_root], linux_user, timeout=60)
 
 
 def clone_or_update(app, linux_user):
@@ -67,8 +80,6 @@ def clone_or_update(app, linux_user):
         return 0, "No Git repository configured."
     if os.path.exists(os.path.join(app.app_root, ".git")):
         return _run(["git", "pull", "--ff-only"], linux_user, cwd=app.app_root, timeout=300)
-    parent = os.path.dirname(app.app_root)
-    os.makedirs(parent, mode=0o750, exist_ok=True)
     branch_args = ["--branch", app.branch] if app.branch else []
     return _run(["git", "clone"] + branch_args + [app.git_url, app.app_root], linux_user, timeout=600)
 

@@ -41,7 +41,7 @@
         <td><code>{{ app.app_root }}</code></td>
         <td>{{ app.port }}</td>
         <td><span class="nm-status nm-status-{{ app.status }}">{{ app.status }}</span></td>
-        <td><a class="nm-link" href="{% url 'nodeManager:detail' app.pk %}">Manage</a></td>
+        <td><a class="nm-link" href="{% url 'nodeManager:detail' app.public_id %}">Manage</a></td>
       </tr>
       {% empty %}
       <tr><td colspan="7" class="nm-empty">No Node.js applications found.</td></tr>
