@@ -34,6 +34,22 @@ HELPER_TARGET="$CYBERPANEL_ROOT/nodeManager/bin/node_manager_run_as_user"
 STATIC_TARGET="$CYBERPANEL_ROOT/static/nodeManager"
 STATIC_SOURCE=""
 
+add_unique_user() {
+  local user="$1"
+  if ! [[ "$user" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    return
+  fi
+  if ! id "$user" >/dev/null 2>&1; then
+    return
+  fi
+  for existing in "${WEB_USERS[@]:-}"; do
+    if [ "$existing" = "$user" ]; then
+      return
+    fi
+  done
+  WEB_USERS+=("$user")
+}
+
 HELPER_SOURCE=""
 for candidate in "$PLUGIN_DIR/bin/node_manager_run_as_user" "$PLUGIN_DIR/nodeManager/bin/node_manager_run_as_user" "$CYBERPANEL_ROOT/nodeManager/bin/node_manager_run_as_user"; do
   if [ -f "$candidate" ]; then
@@ -50,19 +66,31 @@ if [ -n "$HELPER_SOURCE" ]; then
   fi
   chown root:root "$HELPER_TARGET"
   chmod 750 "$HELPER_TARGET"
-  if id lscpd >/dev/null 2>&1; then
-    cat >/etc/sudoers.d/nodeManager <<EOF
-Defaults:lscpd !requiretty
-lscpd ALL=(root) NOPASSWD: $HELPER_TARGET
-EOF
+  WEB_USERS=()
+  add_unique_user lscpd
+  add_unique_user nobody
+  add_unique_user cyberpanel
+  if command -v ps >/dev/null 2>&1; then
+    while read -r user; do
+      add_unique_user "$user"
+    done < <(ps -eo user=,comm= | awk '$2 ~ /lscpd/ {print $1}' | sort -u)
+  fi
+  if [ "${#WEB_USERS[@]}" -gt 0 ]; then
+    {
+      echo "# Managed by nodeManager post_install"
+      for user in "${WEB_USERS[@]}"; do
+        echo "Defaults:${user} !requiretty"
+        echo "${user} ALL=(root) NOPASSWD: $HELPER_TARGET"
+      done
+    } >/etc/sudoers.d/nodeManager
     chown root:root /etc/sudoers.d/nodeManager
     chmod 440 /etc/sudoers.d/nodeManager
     if command -v visudo >/dev/null 2>&1; then
       visudo -cf /etc/sudoers.d/nodeManager
     fi
-    echo "[nodeManager] Installed sudoers rule for lscpd."
+    echo "[nodeManager] Installed sudoers rule for: ${WEB_USERS[*]}"
   else
-    echo "[nodeManager] lscpd user not found; sudoers rule was not installed."
+    echo "[nodeManager] No CyberPanel web users found; sudoers rule was not installed."
   fi
 else
   echo "[nodeManager] Run-as-user helper not found. Checked:"

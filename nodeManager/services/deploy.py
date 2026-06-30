@@ -12,6 +12,10 @@ from .validation import parse_env_text
 
 
 RUN_AS_HELPER = "/usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user"
+HELPER_SETUP_ERROR = (
+    "nodeManager run-as-user helper is not installed at %s. "
+    "Run sudo bash post_install from the installed plugin directory and restart lscpd."
+) % RUN_AS_HELPER
 
 
 def make_pm2_name(owner_username, domain, app_name):
@@ -43,20 +47,7 @@ def _run(command, linux_user, cwd=None, timeout=600):
             timeout=timeout,
         )
         return result.returncode, result.stdout
-    sudo_command = ["sudo", "-n", "-u", linux_user]
-    if cwd:
-        script = "cd %s && exec %s" % (shlex.quote(cwd), shlex.join(command))
-        sudo_command += ["bash", "-lc", script]
-    else:
-        sudo_command += command
-    result = subprocess.run(
-        sudo_command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        timeout=timeout,
-    )
-    return result.returncode, result.stdout
+    return 1, HELPER_SETUP_ERROR
 
 
 def _path_exists(linux_user, path):
@@ -78,8 +69,11 @@ def _write_env_file(app, env_text, linux_user):
     for key, value in sorted(env.items()):
         escaped = value.replace("\\", "\\\\").replace("\n", "\\n").replace('"', '\\"')
         lines.append('%s="%s"' % (key, escaped))
+    if not os.path.exists(RUN_AS_HELPER):
+        append_deploy_log(app, HELPER_SETUP_ERROR)
+        raise RuntimeError(HELPER_SETUP_ERROR)
     proc = subprocess.run(
-        (["sudo", "-n", RUN_AS_HELPER, linux_user, "-", "tee", path] if os.path.exists(RUN_AS_HELPER) else ["sudo", "-n", "-u", linux_user, "tee", path]),
+        ["sudo", "-n", RUN_AS_HELPER, linux_user, "-", "tee", path],
         input="\n".join(lines) + "\n",
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -109,6 +103,8 @@ def prepare_app_directory(app, linux_user):
     append_deploy_log(app, "$ mkdir -p %s\n%s" % (app.app_root, output))
     if code != 0:
         detail = output.strip() or "no command output"
+        if "sudo:" in detail and ("password" in detail or "terminal is required" in detail):
+            detail = "%s Run sudo bash post_install from /usr/local/CyberCP/nodeManager and restart lscpd." % detail
         raise RuntimeError("Unable to create application directory as %s: %s" % (linux_user, detail))
     _run(["chmod", "750", app.app_root], linux_user, timeout=60)
 

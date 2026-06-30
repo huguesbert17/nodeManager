@@ -4,6 +4,10 @@ import subprocess
 
 
 RUN_AS_HELPER = "/usr/local/CyberCP/nodeManager/bin/node_manager_run_as_user"
+HELPER_SETUP_ERROR = (
+    "nodeManager run-as-user helper is not installed at %s. "
+    "Run sudo bash post_install from the installed plugin directory and restart lscpd."
+) % RUN_AS_HELPER
 
 
 def _run_as_user(linux_user, args, cwd=None, env=None, timeout=300):
@@ -21,23 +25,7 @@ def _run_as_user(linux_user, args, cwd=None, env=None, timeout=300):
             timeout=timeout,
         )
         return result.returncode, result.stdout
-    command = ["sudo", "-n", "-u", linux_user]
-    if env:
-        command += ["env"] + ["%s=%s" % (key, value) for key, value in sorted(env.items())]
-    if cwd:
-        script = "cd %s && exec %s" % (shlex.quote(cwd), shlex.join(args))
-        command += ["bash", "-lc", script]
-    else:
-        command += args
-    result = subprocess.run(
-        command,
-        env=os.environ.copy(),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        timeout=timeout,
-    )
-    return result.returncode, result.stdout
+    return 1, HELPER_SETUP_ERROR
 
 
 def command_to_pm2_args(command):
